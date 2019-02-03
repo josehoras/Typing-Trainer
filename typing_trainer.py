@@ -3,7 +3,7 @@ import tkinter as tk
 
 class TrainText(tk.Text):
     def __init__(self):
-        super().__init__(top_frame, wrap=tk.WORD, undo=0, bg="white",
+        super().__init__(top_frame, wrap=tk.WORD, bg="white", height=8, width=50,
                          font=('helvetica', 18), yscrollcommand=vbar.set)
         self.insert(tk.END, train_text)
         self.config(state=tk.DISABLED)
@@ -19,7 +19,17 @@ class TrainText(tk.Text):
         self.remove_cursor()
         self.move_cursor_mark()
         self.set_cursor()
+        print(self.get_type_char(event))
         self.tag_add("good", 0.0, 'cursor_mark')
+
+    def get_type_char(self, event):
+        letters = ['q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p', '+',
+                   'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '#',
+                   '<', 'y', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '-']
+        key = event.keysym
+        if key in letters: return key
+        elif key=='space': return " "
+        return key
 
     def move_cursor_mark(self):
         line, column = tuple(map(int, str.split(self.index('cursor_mark'), ".")))
