@@ -1,6 +1,7 @@
 import tkinter as tk
 
-def quit(event):                           
+
+def quit(event):
     root.destroy()
 
 class TrainText(tk.Text):
@@ -54,16 +55,9 @@ input_text_wrong = ""
 vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
 vbar.pack(side=tk.RIGHT,fill=tk.Y)
 
-# train = tk.Text(top_frame, wrap=tk.WORD, undo=0, bg="white", yscrollcommand=vbar.set)
 train = TrainText()
 train.pack(expand=True, fill="both")
 vbar.config(command=train.yview)
-
-# train.tag_add("good", 1.4)
-
-# train.insert(tk.END, train_text)
-# train.config(cursor="arrow")
-# train.config(state=tk.DISABLED)
 
 
 # Define bindings
