@@ -17,8 +17,8 @@ class TrainText(tk.Text):
 
     def type(self, event):
         key = self.get_type_char(event)
-        if key:
-            print(key)
+        cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
+        if key==cursor_char:
             self.remove_cursor()
             self.move_cursor_mark()
             self.set_cursor()
