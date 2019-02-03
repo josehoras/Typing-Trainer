@@ -6,15 +6,35 @@ def quit(event):
 
 class TrainText(tk.Text):
     def __init__(self):
-        super().__init__(top_frame, wrap=tk.WORD, undo=0, bg="white", yscrollcommand=vbar.set)
-        self.tag_config("good", foreground="green")
+        super().__init__(top_frame, wrap=tk.WORD, undo=0, bg="white",
+                         font=('helvetica', 18), yscrollcommand=vbar.set)
+        self.tag_config("good", background="white", foreground="green")
+        self.tag_config("cursor", background="yellow", foreground="black")
+        self.insert(tk.END, train_text)
+
         self.good = 0
+        self.set_cursor()
+        # self.mark_set("insert", "%d.%d" % (1, self.good))
         self.bind_all('<Key>', self.type)
+
     def type(self, event):
+        self.remove_cursor()
         self.good += 1
-        self.mark_set("insert", "%d.%d" % (1, self.good))
-        print(tk.INSERT)
-        self.tag_add("good", 1.1, tk.INSERT)
+        self.set_cursor()
+        tag_end = "%d.%d" % (1, self.good+1)
+        self.tag_add("good", 0.0, tag_end)
+        print(self.tag_ranges("good")[0])
+
+    def remove_cursor(self):
+        if self.tag_ranges("cursor"):
+            self.tag_remove("cursor", self.tag_ranges("cursor")[0], self.tag_ranges("cursor")[1])
+
+    def set_cursor(self):
+        tag_init = "%d.%d" % (1, self.good)
+        tag_end = "%d.%d" % (1, self.good+1)
+        self.tag_add("cursor", tag_init, tag_end)
+        print(tag_init, " ", tag_end)
+        print(self.tag_ranges("cursor"))
 
 # Create main window
 root = tk.Tk()
@@ -45,8 +65,8 @@ vbar.config(command=train.yview)
 # train.tag_add("good", 1.4)
 
 train.insert(tk.END, train_text)
-train.config(cursor="arrow")
-train.config(state=tk.DISABLED)
+# train.config(cursor="arrow")
+# train.config(state=tk.DISABLED)
 
 
 # Define bindings
