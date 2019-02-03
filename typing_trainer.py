@@ -16,20 +16,37 @@ class TrainText(tk.Text):
         self.bind_all('<Key>', self.type)
 
     def type(self, event):
-        self.remove_cursor()
-        self.move_cursor_mark()
-        self.set_cursor()
-        print(self.get_type_char(event))
-        self.tag_add("good", 0.0, 'cursor_mark')
+        key = self.get_type_char(event)
+        if key:
+            print(key)
+            self.remove_cursor()
+            self.move_cursor_mark()
+            self.set_cursor()
+            self.tag_add("good", 0.0, 'cursor_mark')
 
     def get_type_char(self, event):
-        letters = ['q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p', '+',
-                   'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '#',
-                   '<', 'y', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '-']
+        letters = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+                   'q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p',
+                   'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l',
+                   'y', 'x', 'c', 'v', 'b', 'n', 'm',
+                   'Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P',
+                   'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
+                   'Y', 'X', 'C', 'V', 'B', 'N', 'M']
+        special_keys = {'degree':'°', 'asciicircum':'^', 'exclam':'!', 'quotedbl':'"',
+                        'section':'§', 'dollar':'$', 'percent':'%', 'ampersand':"&",
+                        'slash':"/", 'parenleft':'(', 'parenright':')', 'slash':"/",
+                        'parenleft':'(','parenright':')', 'equal':'=', 'question':'?',
+                        'grave':'`', 'space':" ", 'ssharp':"ß", 'acute':'´', 'plus':'+',
+                        'less':'<', 'comma':',', 'period':'.', 'minus':'-', 'underscore':'_',
+                        'udiaeresis':'ü', 'Udiaeresis':'Ü', 'odiaeresis':'ö', 'Odiaeresis':'Ö',
+                        'adiaeresis':'ä', 'Adiaeresis':'Ä', 'asterisk':'*', 'numbersign':'#',
+                        'apostrophe':"'", 'colon':':', 'semicolon':';', 'greater':'>', 'at':'@'}
         key = event.keysym
         if key in letters: return key
-        elif key=='space': return " "
-        return key
+        if key in special_keys: return special_keys[key]
+        if key == 'Shift_R': return
+        if key == 'Shift_L': return
+        return
 
     def move_cursor_mark(self):
         line, column = tuple(map(int, str.split(self.index('cursor_mark'), ".")))
