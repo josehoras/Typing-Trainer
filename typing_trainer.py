@@ -1,6 +1,5 @@
 import tkinter as tk
 
-
 def quit(event):                           
     root.destroy()
 
@@ -8,41 +7,39 @@ class TrainText(tk.Text):
     def __init__(self):
         super().__init__(top_frame, wrap=tk.WORD, undo=0, bg="white",
                          font=('helvetica', 18), yscrollcommand=vbar.set)
+        self.insert(tk.END, train_text)
+        self.config(state=tk.DISABLED)
+
         self.tag_config("good", background="white", foreground="green")
         self.tag_config("cursor", background="yellow", foreground="black")
-        self.insert(tk.END, train_text)
-
-        self.good = 0
+        self.mark_set("cursor_mark", "0.0")
         self.set_cursor()
-        # self.mark_set("insert", "%d.%d" % (1, self.good))
+
         self.bind_all('<Key>', self.type)
 
     def type(self, event):
         self.remove_cursor()
-        self.good += 1
+        self.move_cursor_mark()
         self.set_cursor()
-        tag_end = "%d.%d" % (1, self.good+1)
-        self.tag_add("good", 0.0, tag_end)
-        print(self.tag_ranges("good")[0])
+        self.tag_add("good", 0.0, 'cursor_mark')
+
+    def move_cursor_mark(self):
+        line, column = tuple(map(int, str.split(self.index('cursor_mark'), ".")))
+        self.mark_set("cursor_mark", "%d.%d" % (line, column + 1))
 
     def remove_cursor(self):
-        if self.tag_ranges("cursor"):
-            self.tag_remove("cursor", self.tag_ranges("cursor")[0], self.tag_ranges("cursor")[1])
+        self.tag_remove("cursor", "cursor_mark")
 
     def set_cursor(self):
-        tag_init = "%d.%d" % (1, self.good)
-        tag_end = "%d.%d" % (1, self.good+1)
-        self.tag_add("cursor", tag_init, tag_end)
-        print(tag_init, " ", tag_end)
-        print(self.tag_ranges("cursor"))
+        self.tag_add("cursor", "cursor_mark")
 
 # Create main window
 root = tk.Tk()
 root.minsize(70, 38)
 # Create frames in window
-bottom_frame = tk.Frame(root,width=300,height=300)
+bottom_frame = tk.Frame(root,width=100,height=100)
 bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
-top_frame = tk.Frame(root,width=300,height=300)
+top_frame = tk.Frame(root,width=100,height=100)
 top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
 # Create quit button
 bt = tk.Button(bottom_frame, text='Quit')
@@ -64,7 +61,7 @@ vbar.config(command=train.yview)
 
 # train.tag_add("good", 1.4)
 
-train.insert(tk.END, train_text)
+# train.insert(tk.END, train_text)
 # train.config(cursor="arrow")
 # train.config(state=tk.DISABLED)
 
