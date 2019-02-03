@@ -11,19 +11,20 @@ def typing(event):
     my_canvas.itemconfigure(texto, text=txt)
     
 root = tk.Tk()
-root.minsize(100, 100)
+root.minsize(70, 38)
 
-top_frame = tk.Frame(root,width=300,height=300)
-top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
 bottom_frame = tk.Frame(root,width=300,height=300)
 bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
+top_frame = tk.Frame(root,width=300,height=300)
+top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
 
-bt = tk.Button(bottom_frame, text='Quit', height=3, width=3)
-bt.pack(side = tk.BOTTOM)
-bt.pack(side = tk.RIGHT, padx=10, pady=5)
+
+bt = tk.Button(bottom_frame, text='Quit')
+bt.pack(side=tk.BOTTOM)
+bt.pack(side=tk.RIGHT, padx=10, pady=5)
 
 my_canvas = tk.Canvas(top_frame, width=300, height=300, scrollregion=(0,0,300,500), bg="white")
-vbar= tk.Scrollbar(top_frame,orient=tk.VERTICAL)
+vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
 vbar.pack(side=tk.RIGHT,fill=tk.Y)
 vbar.config(command=my_canvas.yview)
 txt = "hola"
