@@ -1,6 +1,9 @@
 import tkinter as tk
+from six.moves import cPickle as pickle
+import matplotlib.pyplot as plt
 import time
 
+PROGRESS_FILE = "progress.p"
 LETTERS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
            'q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p',
            'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l',
@@ -20,7 +23,7 @@ SPECIAL_KEYS = {'degree': '°', 'asciicircum': '^', 'exclam': '!', 'quotedbl': '
 
 class TrainText(tk.Text):
     def __init__(self, frame, texts=[]):
-        super().__init__(frame, wrap=tk.WORD, bg="white", height=8, width=50,
+        super().__init__(frame, wrap=tk.WORD, bg="white", height=10, width=60,
                          font=('monospace', 14), yscrollcommand=vbar.set)
         self.tag_config("cursor", background="yellow", foreground="black")
         self.tag_config("good", background="white", foreground="green")
@@ -35,13 +38,15 @@ class TrainText(tk.Text):
         self.words = 0
         self.mistakes = 0
         self.show()
-
+        # self.save_progress(1.5, 2, 0.5)
+        # self.show_progress()
         self.bind_all('<Key>', self.type)
 
     def show(self):
         self.config(state=tk.NORMAL)
         if self.status == "Welcome":
-            self.insert(tk.END, "Welcome!")
+            self.insert(tk.END, "Welcome!\n\n")
+            self.insert(tk.END, "Press any key to start the exercise.")
         elif self.status == "Training":
             self.characters = 0
             self.words = 0
@@ -69,9 +74,9 @@ class TrainText(tk.Text):
             summary.append("Words per minute: %.1f\n" % wpm)
             summary.append("Accuracy: %.1f%%\n" % acc)
             summary.append("Score: %.2f\n" % score)
+            self.save_progress(wpm, acc, score)
             for line in summary:
                 self.insert(tk.END, line)
-
         self.config(state=tk.DISABLED)
 
     def change_status(self):
@@ -141,6 +146,52 @@ class TrainText(tk.Text):
             return True
         else: return False
 
+    def save_progress(self, wpm, acc, score):
+        try:
+            wpm_series, acc_series, score_series = pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
+            wpm_series.append(wpm)
+            acc_series.append(acc)
+            score_series.append(score)
+            pickle.dump([wpm_series, acc_series, score_series], open(PROGRESS_FILE, 'wb'))
+        except (OSError, IOError):  # No progress file yet available
+            pickle.dump([[wpm], [acc], [score]], open(PROGRESS_FILE, 'wb'))
+
+    def show_progress(self):
+        try:
+            wpm_series, acc_series, score_series = pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
+            print(wpm_series)
+            print(acc_series)
+            print(score_series)
+        except (OSError, IOError):  # No progress file yet available
+            print("No data")
+
+
+# Finally not in the class
+def plot_progress():
+    try:
+        wpm_series, acc_series, score_series = pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
+    except (OSError, IOError):  # No progress file yet available
+        print("No data")
+    xs = [x for x in range(len(wpm_series))]
+    plt.subplot(3, 1, 1)
+    plt.title("Words per minute")
+    plt.scatter(xs,wpm_series)
+    plt.plot(xs,wpm_series)
+    plt.ylim(0, 60)
+    plt.setp(plt.gca(), xticklabels=[], xticks=[])#, yticks=(0, 90, 100))
+    plt.subplot(3, 1, 2)
+    plt.title("Accuracy")
+    plt.scatter(xs,acc_series)
+    plt.plot(xs,acc_series)
+    plt.ylim(80, 100)
+    plt.setp(plt.gca(), xticklabels=[], xticks=[], yticks=(80, 90, 100))
+    plt.subplot(3, 1, 3)
+    plt.title("Score")
+    plt.scatter(xs,score_series)
+    plt.plot(xs,score_series)
+    plt.setp(plt.gca(), xticklabels=[], xticks=[])
+    plt.show()
+
 
 # Create main window
 root = tk.Tk()
@@ -154,6 +205,10 @@ top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
 bt = tk.Button(bottom_frame, text='Quit', command=root.destroy)
 bt.pack(side=tk.BOTTOM)
 bt.pack(side=tk.RIGHT, padx=10, pady=5)
+# Create show progress button
+bprogress = tk.Button(bottom_frame, text='Progress', command=plot_progress)
+bprogress.pack(side=tk.BOTTOM)
+bprogress.pack(side=tk.LEFT, padx=10, pady=5)
 # Define train text
 train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
 train_text2 = "A general theory of cookies may be formulated this way."
