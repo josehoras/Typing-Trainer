@@ -37,13 +37,11 @@ class TrainText(tk.Text):
 
     def get_type_char(self, event):
         key = event.keysym
-        # print(key)
         if key in LETTERS: return key
         if key in SPECIAL_KEYS: return SPECIAL_KEYS[key]
         if key == 'BackSpace': return -1
         if key == 'Return': return "newline"
         return
-
     def type(self, event):
         key = self.get_type_char(event)
         cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
@@ -52,12 +50,11 @@ class TrainText(tk.Text):
             self.remove_tags()
             self.update_marks(forward=(key!=-1), move_good=move_good)
             self.add_tags()
-
+        self.check_finish()
     def update_marks(self, forward=True, move_good=True):
         if move_good and self.compare('cursor_mark', '==', 'good_mark'):
             self.move_mark('good_mark', forward)
         self.move_mark('cursor_mark', forward)
-
     def move_mark(self, mark_name, forward):
         line, column = tuple(map(int, str.split(self.index(mark_name), ".")))
         if forward:
@@ -70,16 +67,19 @@ class TrainText(tk.Text):
             if column == 0 and line > 1:  ## First line character
                 line, column = tuple(map(int, str.split(self.index("%d.end" % (line-1)), ".")))
         self.mark_set(mark_name, "%d.%d" % (line, column + step))
-
     def remove_tags(self):
         self.tag_remove("good", "0.0", "good_mark")
         self.tag_remove("bad", 'good_mark', 'cursor_mark')
         self.tag_remove("cursor", "cursor_mark")
-
     def add_tags(self):
         self.tag_add("good", "0.0", 'good_mark')
         self.tag_add("bad", 'good_mark', 'cursor_mark')
         self.tag_add("cursor", "cursor_mark")
+    def check_finish(self):
+        line, column = tuple(map(int, str.split(self.index('good_mark'), ".")))
+        end_line, end_column = tuple(map(int, str.split(self.index(tk.END), ".")))
+        if line+1 == end_line and column == end_column:
+            print("You did it!!!")
 
 
 # Create main window
