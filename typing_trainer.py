@@ -21,19 +21,41 @@ class TrainText(tk.Text):
     def __init__(self, frame, texts=[]):
         super().__init__(frame, wrap=tk.WORD, bg="white", height=8, width=50,
                          font=('helvetica', 18), yscrollcommand=vbar.set)
-        for text in texts:
-            self.insert(tk.END, text)
-            self.insert(tk.END, '\u00B6\n')
-        self.config(state=tk.DISABLED)
-
         self.tag_config("cursor", background="yellow", foreground="black")
         self.tag_config("good", background="white", foreground="green")
         self.tag_config("bad", background="white", foreground="red")
-        self.mark_set("cursor_mark", "0.0")
-        self.mark_set("good_mark", "0.0")
-        self.tag_add("cursor", "cursor_mark")
+
+        self.status = 'Welcome'
+        self.texts = texts
+        self.show()
 
         self.bind_all('<Key>', self.type)
+
+    def show(self):
+        self.config(state=tk.NORMAL)
+        if self.status == "Welcome":
+            self.insert(tk.END, "Welcome!")
+        elif self.status == "Training":
+            for text in self.texts:
+                self.insert(tk.END, text)
+                self.insert(tk.END, '\u00B6\n')
+            self.mark_set("cursor_mark", "0.0")
+            self.mark_set("good_mark", "0.0")
+            self.tag_add("cursor", "cursor_mark")
+        elif self.status == "Summary":
+            self.insert(tk.END, "Congratulations!")
+        self.config(state=tk.DISABLED)
+
+    def change_status(self):
+        self.config(state=tk.NORMAL)
+        self.delete("0.0", tk.END)
+        if self.status == "Welcome":
+            self.status = "Training"
+        elif self.status == "Training":
+            self.status = "Summary"
+        elif self.status == "Summary":
+            self.status = "Training"
+        self.show()
 
     def get_type_char(self, event):
         key = event.keysym
@@ -43,14 +65,19 @@ class TrainText(tk.Text):
         if key == 'Return': return "newline"
         return
     def type(self, event):
-        key = self.get_type_char(event)
-        cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
-        if key:
-            move_good = (key==cursor_char or (key=="newline" and cursor_char=='\u00B6') or key==-1)
-            self.remove_tags()
-            self.update_marks(forward=(key!=-1), move_good=move_good)
-            self.add_tags()
-        self.check_finish()
+        if self.status == 'Training':
+            key = self.get_type_char(event)
+            cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
+            if key:
+                move_good = (key==cursor_char or (key=="newline" and cursor_char=='\u00B6') or key==-1)
+                self.remove_tags()
+                self.update_marks(forward=(key!=-1), move_good=move_good)
+                self.add_tags()
+            if self.check_finish():
+                self.change_status()
+        else:
+            self.change_status()
+
     def update_marks(self, forward=True, move_good=True):
         if move_good and self.compare('cursor_mark', '==', 'good_mark'):
             self.move_mark('good_mark', forward)
@@ -67,6 +94,7 @@ class TrainText(tk.Text):
             if column == 0 and line > 1:  ## First line character
                 line, column = tuple(map(int, str.split(self.index("%d.end" % (line-1)), ".")))
         self.mark_set(mark_name, "%d.%d" % (line, column + step))
+
     def remove_tags(self):
         self.tag_remove("good", "0.0", "good_mark")
         self.tag_remove("bad", 'good_mark', 'cursor_mark')
@@ -75,11 +103,13 @@ class TrainText(tk.Text):
         self.tag_add("good", "0.0", 'good_mark')
         self.tag_add("bad", 'good_mark', 'cursor_mark')
         self.tag_add("cursor", "cursor_mark")
+
     def check_finish(self):
         line, column = tuple(map(int, str.split(self.index('good_mark'), ".")))
         end_line, end_column = tuple(map(int, str.split(self.index(tk.END), ".")))
         if line+1 == end_line and column == end_column:
-            print("You did it!!!")
+            return True
+        else: return False
 
 
 # Create main window
@@ -102,6 +132,7 @@ train_texts = [train_text1, train_text2]
 # Define text box with scrollbar
 vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
 vbar.pack(side=tk.RIGHT,fill=tk.Y)
+
 train = TrainText(top_frame, train_texts)
 train.pack(expand=True, fill="both")
 vbar.config(command=train.yview)
