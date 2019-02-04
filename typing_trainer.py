@@ -17,12 +17,13 @@ SPECIAL_KEYS = {'degree': '°', 'asciicircum': '^', 'exclam': '!', 'quotedbl': '
                 'adiaeresis': 'ä', 'Adiaeresis': 'Ä', 'asterisk': '*', 'numbersign': '#',
                 'apostrophe': "'", 'colon': ':', 'semicolon': ';', 'greater': '>', 'at': '@'}
 
-
 class TrainText(tk.Text):
-    def __init__(self, frame, text=""):
+    def __init__(self, frame, texts=[]):
         super().__init__(frame, wrap=tk.WORD, bg="white", height=8, width=50,
                          font=('helvetica', 18), yscrollcommand=vbar.set)
-        self.insert(tk.END, text)
+        for text in texts:
+            self.insert(tk.END, text)
+            self.insert(tk.END, '\u00B6\n')
         self.config(state=tk.DISABLED)
 
         self.tag_config("cursor", background="yellow", foreground="black")
@@ -36,34 +37,52 @@ class TrainText(tk.Text):
 
     def get_type_char(self, event):
         key = event.keysym
+        # print(key)
         if key in LETTERS: return key
         if key in SPECIAL_KEYS: return SPECIAL_KEYS[key]
         if key == 'BackSpace': return -1
+        if key == 'Return': return "newline"
         return
 
     def type(self, event):
         key = self.get_type_char(event)
         cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
+        # print(cursor_char)
         if key==cursor_char:
             self.remove_tags()
-            self.update_marks(1, all=1)
+            self.update_marks(1, good=True)
             self.add_tags()
-        elif key==-1:
+        if key=="newline" and cursor_char=='\u00B6':
             self.remove_tags()
-            self.update_marks(key, all=1)
-            self.add_tags()
-        elif key!=cursor_char and key!=None:
-            self.remove_tags()
-            self.update_marks(1, all=0)
+            self.update_marks(1, good=True)
             self.add_tags()
 
-    def update_marks(self, step, all=True):
-        if all and self.compare('cursor_mark', '==', 'good_mark'):
+        elif key==-1:
+            self.remove_tags()
+            self.update_marks(key, good=True)
+            self.add_tags()
+        elif key and key!=cursor_char:
+            self.remove_tags()
+            if cursor_char!='\u00B6':
+                self.update_marks(1, good=False)
+            if cursor_char=='\u00B6':
+                self.update_marks(1, good=False)
+            self.add_tags()
+
+    def update_marks(self, step, good=True):
+        if good and self.compare('cursor_mark', '==', 'good_mark'):
             self.move_mark('good_mark', step)
         self.move_mark('cursor_mark', step)
 
     def move_mark(self, mark_name, step):
         line, column = tuple(map(int, str.split(self.index(mark_name), ".")))
+        if step > 0:
+            if self.index("%d.end" % (line)) == ("%d.%d" % (line, column+1)):  # EOL
+                line += 1
+                column = -step
+        elif step < 0:
+            if column == 0 and line > 1:  ## First line character
+                line, column = tuple(map(int, str.split(self.index("%d.end" % (line-1)), ".")))
         self.mark_set(mark_name, "%d.%d" % (line, column + step))
 
     def remove_tags(self):
@@ -90,11 +109,14 @@ bt = tk.Button(bottom_frame, text='Quit', command=root.destroy)
 bt.pack(side=tk.BOTTOM)
 bt.pack(side=tk.RIGHT, padx=10, pady=5)
 # Define train text
-train_text = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
+# train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
+train_text1 = "A ge."
+train_text2 = "A general theory of cookies may be formulated this way."
+train_texts = [train_text1, train_text2]
 # Define text box with scrollbar
 vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
 vbar.pack(side=tk.RIGHT,fill=tk.Y)
-train = TrainText(top_frame, train_text)
+train = TrainText(top_frame, train_texts)
 train.pack(expand=True, fill="both")
 vbar.config(command=train.yview)
 # Mainloop
