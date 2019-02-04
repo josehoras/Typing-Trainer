@@ -21,15 +21,19 @@ SPECIAL_KEYS = {'degree': '°', 'asciicircum': '^', 'exclam': '!', 'quotedbl': '
 class TrainText(tk.Text):
     def __init__(self, frame, texts=[]):
         super().__init__(frame, wrap=tk.WORD, bg="white", height=8, width=50,
-                         font=('helvetica', 18), yscrollcommand=vbar.set)
+                         font=('monospace', 14), yscrollcommand=vbar.set)
         self.tag_config("cursor", background="yellow", foreground="black")
         self.tag_config("good", background="white", foreground="green")
-        self.tag_config("bad", background="white", foreground="red")
+        self.tag_config("bad", background="lavender blush", foreground="red")
 
         self.start = 0
         self.finish_time = 0
+        self.screens = ['Welcome', 'Training', 'Summary']
         self.status = 'Welcome'
         self.texts = texts
+        self.characters = 0
+        self.words = 0
+        self.mistakes = 0
         self.show()
 
         self.bind_all('<Key>', self.type)
@@ -39,7 +43,12 @@ class TrainText(tk.Text):
         if self.status == "Welcome":
             self.insert(tk.END, "Welcome!")
         elif self.status == "Training":
+            self.characters = 0
+            self.words = 0
+            self.mistakes = 0
             for text in self.texts:
+                self.characters += len(text)
+                self.words += len(text.split())
                 self.insert(tk.END, text)
                 self.insert(tk.END, '\u00B6\n')
             self.mark_set("cursor_mark", "0.0")
@@ -47,8 +56,22 @@ class TrainText(tk.Text):
             self.tag_add("cursor", "cursor_mark")
             self.start = time.time()
         elif self.status == "Summary":
-            summary_text = "Congratulations! You did it in %i seconds" % (self.finish_time)
-            self.insert(tk.END, summary_text)
+            min = int(self.finish_time / 60)
+            sec = self.finish_time % 60
+            cps = self.characters / self.finish_time
+            wpm = 60 * self.words / self.finish_time
+            acc = 100 * (1 - self.mistakes / self.characters)
+            score = 2 * cps * acc/100
+            summary = []
+            summary.append("Congratulations!\n")
+            summary.append("You did it in %i minutes and %i seconds\n" % (min, sec))
+            summary.append("Characters per second: %.1f\n" % cps)
+            summary.append("Words per minute: %.1f\n" % wpm)
+            summary.append("Accuracy: %.1f%%\n" % acc)
+            summary.append("Score: %.2f\n" % score)
+            for line in summary:
+                self.insert(tk.END, line)
+
         self.config(state=tk.DISABLED)
 
     def change_status(self):
@@ -79,6 +102,7 @@ class TrainText(tk.Text):
                 self.remove_tags()
                 self.update_marks(forward=(key!=-1), move_good=move_good)
                 self.add_tags()
+                if not move_good: self.mistakes += 1
             if self.check_finish():
                 self.change_status()
         else:
@@ -131,11 +155,10 @@ bt = tk.Button(bottom_frame, text='Quit', command=root.destroy)
 bt.pack(side=tk.BOTTOM)
 bt.pack(side=tk.RIGHT, padx=10, pady=5)
 # Define train text
-# train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
-train_text1 = "A ge."
+train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
 train_text2 = "A general theory of cookies may be formulated this way."
-train_text2 = "A."
-train_texts = [train_text1, train_text2]
+train_texts = [train_text1]
+
 # Define text box with scrollbar
 vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
 vbar.pack(side=tk.RIGHT,fill=tk.Y)
