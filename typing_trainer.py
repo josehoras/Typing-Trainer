@@ -30,7 +30,7 @@ class TrainText(tk.Text):
         self.tag_config("bad", background="white", foreground="red")
         self.mark_set("cursor_mark", "0.0")
         self.mark_set("good_mark", "0.0")
-        self.set_cursor()
+        self.tag_add("cursor", "cursor_mark")
 
         self.bind_all('<Key>', self.type)
 
@@ -45,45 +45,35 @@ class TrainText(tk.Text):
         key = self.get_type_char(event)
         cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
         if key==cursor_char:
-            self.tag_remove("good", "0.0", "good_mark")
-            self.tag_remove("bad", 'good_mark', 'cursor_mark')
-            self.tag_remove("cursor", "cursor_mark")
-            if self.compare('cursor_mark', '==', 'good_mark'):
-                self.move_good_mark(1)
-            self.move_cursor_mark(1)
-            self.tag_add("good", "0.0", 'good_mark')
-            self.tag_add("bad", 'good_mark', 'cursor_mark')
-            self.tag_add("cursor", "cursor_mark")
+            self.remove_tags()
+            self.update_marks(1, all=1)
+            self.add_tags()
         elif key==-1:
-            self.tag_remove("good", "0.0", "good_mark")
-            self.tag_remove("bad", 'good_mark', 'cursor_mark')
-            self.tag_remove("cursor", "cursor_mark")
-            if self.compare('cursor_mark', '==', 'good_mark'):
-                self.move_good_mark(key)
-            self.move_cursor_mark(key)
-            self.tag_add("good", "0.0", 'good_mark')
-            self.tag_add("bad", 'good_mark', 'cursor_mark')
-            self.tag_add("cursor", "cursor_mark")
+            self.remove_tags()
+            self.update_marks(key, all=1)
+            self.add_tags()
         elif key!=cursor_char and key!=None:
-            self.tag_remove("good", "0.0", "good_mark")
-            self.tag_remove("bad", 'good_mark', 'cursor_mark')
-            self.tag_remove("cursor", "cursor_mark")
-            self.move_cursor_mark(1)
-            self.tag_add("good", "0.0", 'good_mark')
-            self.tag_add("bad", 'good_mark', 'cursor_mark')
-            self.tag_add("cursor", "cursor_mark")
+            self.remove_tags()
+            self.update_marks(1, all=0)
+            self.add_tags()
 
-    def move_cursor_mark(self, step):
-        line, column = tuple(map(int, str.split(self.index('cursor_mark'), ".")))
-        self.mark_set("cursor_mark", "%d.%d" % (line, column + step))
-    def move_good_mark(self, step):
-        line, column = tuple(map(int, str.split(self.index('good_mark'), ".")))
-        self.mark_set("good_mark", "%d.%d" % (line, column + step))
+    def update_marks(self, step, all=True):
+        if all and self.compare('cursor_mark', '==', 'good_mark'):
+            self.move_mark('good_mark', step)
+        self.move_mark('cursor_mark', step)
 
-    def remove_cursor(self):
+    def move_mark(self, mark_name, step):
+        line, column = tuple(map(int, str.split(self.index(mark_name), ".")))
+        self.mark_set(mark_name, "%d.%d" % (line, column + step))
+
+    def remove_tags(self):
+        self.tag_remove("good", "0.0", "good_mark")
+        self.tag_remove("bad", 'good_mark', 'cursor_mark')
         self.tag_remove("cursor", "cursor_mark")
 
-    def set_cursor(self):
+    def add_tags(self):
+        self.tag_add("good", "0.0", 'good_mark')
+        self.tag_add("bad", 'good_mark', 'cursor_mark')
         self.tag_add("cursor", "cursor_mark")
 
 
