@@ -1,4 +1,5 @@
 import tkinter as tk
+import time
 
 LETTERS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
            'q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p',
@@ -25,6 +26,8 @@ class TrainText(tk.Text):
         self.tag_config("good", background="white", foreground="green")
         self.tag_config("bad", background="white", foreground="red")
 
+        self.start = 0
+        self.finish_time = 0
         self.status = 'Welcome'
         self.texts = texts
         self.show()
@@ -42,8 +45,10 @@ class TrainText(tk.Text):
             self.mark_set("cursor_mark", "0.0")
             self.mark_set("good_mark", "0.0")
             self.tag_add("cursor", "cursor_mark")
+            self.start = time.time()
         elif self.status == "Summary":
-            self.insert(tk.END, "Congratulations!")
+            summary_text = "Congratulations! You did it in %i seconds" % (self.finish_time)
+            self.insert(tk.END, summary_text)
         self.config(state=tk.DISABLED)
 
     def change_status(self):
@@ -53,6 +58,7 @@ class TrainText(tk.Text):
             self.status = "Training"
         elif self.status == "Training":
             self.status = "Summary"
+            self.finish_time = time.time() - self.start
         elif self.status == "Summary":
             self.status = "Training"
         self.show()
@@ -128,6 +134,7 @@ bt.pack(side=tk.RIGHT, padx=10, pady=5)
 # train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
 train_text1 = "A ge."
 train_text2 = "A general theory of cookies may be formulated this way."
+train_text2 = "A."
 train_texts = [train_text1, train_text2]
 # Define text box with scrollbar
 vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
