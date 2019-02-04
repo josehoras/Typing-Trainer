@@ -47,40 +47,26 @@ class TrainText(tk.Text):
     def type(self, event):
         key = self.get_type_char(event)
         cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
-        # print(cursor_char)
-        if key==cursor_char:
+        if key:
+            move_good = (key==cursor_char or (key=="newline" and cursor_char=='\u00B6') or key==-1)
             self.remove_tags()
-            self.update_marks(1, good=True)
-            self.add_tags()
-        if key=="newline" and cursor_char=='\u00B6':
-            self.remove_tags()
-            self.update_marks(1, good=True)
+            self.update_marks(forward=(key!=-1), move_good=move_good)
             self.add_tags()
 
-        elif key==-1:
-            self.remove_tags()
-            self.update_marks(key, good=True)
-            self.add_tags()
-        elif key and key!=cursor_char:
-            self.remove_tags()
-            if cursor_char!='\u00B6':
-                self.update_marks(1, good=False)
-            if cursor_char=='\u00B6':
-                self.update_marks(1, good=False)
-            self.add_tags()
+    def update_marks(self, forward=True, move_good=True):
+        if move_good and self.compare('cursor_mark', '==', 'good_mark'):
+            self.move_mark('good_mark', forward)
+        self.move_mark('cursor_mark', forward)
 
-    def update_marks(self, step, good=True):
-        if good and self.compare('cursor_mark', '==', 'good_mark'):
-            self.move_mark('good_mark', step)
-        self.move_mark('cursor_mark', step)
-
-    def move_mark(self, mark_name, step):
+    def move_mark(self, mark_name, forward):
         line, column = tuple(map(int, str.split(self.index(mark_name), ".")))
-        if step > 0:
+        if forward:
+            step = 1
             if self.index("%d.end" % (line)) == ("%d.%d" % (line, column+1)):  # EOL
                 line += 1
                 column = -step
-        elif step < 0:
+        else:
+            step = -1
             if column == 0 and line > 1:  ## First line character
                 line, column = tuple(map(int, str.split(self.index("%d.end" % (line-1)), ".")))
         self.mark_set(mark_name, "%d.%d" % (line, column + step))
