@@ -1,56 +1,84 @@
 import tkinter as tk
 
+LETTERS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+           'q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p',
+           'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l',
+           'y', 'x', 'c', 'v', 'b', 'n', 'm',
+           'Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P',
+           'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
+           'Y', 'X', 'C', 'V', 'B', 'N', 'M']
+SPECIAL_KEYS = {'degree': '°', 'asciicircum': '^', 'exclam': '!', 'quotedbl': '"',
+                'section': '§', 'dollar': '$', 'percent': '%', 'ampersand': "&",
+                'slash': "/", 'parenleft': '(', 'parenright': ')', 'slash': "/",
+                'parenleft': '(', 'parenright': ')', 'equal': '=', 'question': '?',
+                'grave': '`', 'space': " ", 'ssharp': "ß", 'acute': '´', 'plus': '+',
+                'less': '<', 'comma': ',', 'period': '.', 'minus': '-', 'underscore': '_',
+                'udiaeresis': 'ü', 'Udiaeresis': 'Ü', 'odiaeresis': 'ö', 'Odiaeresis': 'Ö',
+                'adiaeresis': 'ä', 'Adiaeresis': 'Ä', 'asterisk': '*', 'numbersign': '#',
+                'apostrophe': "'", 'colon': ':', 'semicolon': ';', 'greater': '>', 'at': '@'}
+
 
 class TrainText(tk.Text):
-    def __init__(self):
-        super().__init__(top_frame, wrap=tk.WORD, bg="white", height=8, width=50,
+    def __init__(self, frame, text=""):
+        super().__init__(frame, wrap=tk.WORD, bg="white", height=8, width=50,
                          font=('helvetica', 18), yscrollcommand=vbar.set)
-        self.insert(tk.END, train_text)
+        self.insert(tk.END, text)
         self.config(state=tk.DISABLED)
 
-        self.tag_config("good", background="white", foreground="green")
         self.tag_config("cursor", background="yellow", foreground="black")
+        self.tag_config("good", background="white", foreground="green")
+        self.tag_config("bad", background="white", foreground="red")
         self.mark_set("cursor_mark", "0.0")
+        self.mark_set("good_mark", "0.0")
         self.set_cursor()
 
         self.bind_all('<Key>', self.type)
+
+    def get_type_char(self, event):
+        key = event.keysym
+        if key in LETTERS: return key
+        if key in SPECIAL_KEYS: return SPECIAL_KEYS[key]
+        if key == 'BackSpace': return -1
+        return
 
     def type(self, event):
         key = self.get_type_char(event)
         cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
         if key==cursor_char:
-            self.remove_cursor()
-            self.move_cursor_mark()
-            self.set_cursor()
-            self.tag_add("good", 0.0, 'cursor_mark')
+            self.tag_remove("good", "0.0", "good_mark")
+            self.tag_remove("bad", 'good_mark', 'cursor_mark')
+            self.tag_remove("cursor", "cursor_mark")
+            if self.compare('cursor_mark', '==', 'good_mark'):
+                self.move_good_mark(1)
+            self.move_cursor_mark(1)
+            self.tag_add("good", "0.0", 'good_mark')
+            self.tag_add("bad", 'good_mark', 'cursor_mark')
+            self.tag_add("cursor", "cursor_mark")
+        elif key==-1:
+            self.tag_remove("good", "0.0", "good_mark")
+            self.tag_remove("bad", 'good_mark', 'cursor_mark')
+            self.tag_remove("cursor", "cursor_mark")
+            if self.compare('cursor_mark', '==', 'good_mark'):
+                self.move_good_mark(key)
+            self.move_cursor_mark(key)
+            self.tag_add("good", "0.0", 'good_mark')
+            self.tag_add("bad", 'good_mark', 'cursor_mark')
+            self.tag_add("cursor", "cursor_mark")
+        elif key!=cursor_char and key!=None:
+            self.tag_remove("good", "0.0", "good_mark")
+            self.tag_remove("bad", 'good_mark', 'cursor_mark')
+            self.tag_remove("cursor", "cursor_mark")
+            self.move_cursor_mark(1)
+            self.tag_add("good", "0.0", 'good_mark')
+            self.tag_add("bad", 'good_mark', 'cursor_mark')
+            self.tag_add("cursor", "cursor_mark")
 
-    def get_type_char(self, event):
-        letters = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-                   'q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p',
-                   'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l',
-                   'y', 'x', 'c', 'v', 'b', 'n', 'm',
-                   'Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P',
-                   'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
-                   'Y', 'X', 'C', 'V', 'B', 'N', 'M']
-        special_keys = {'degree':'°', 'asciicircum':'^', 'exclam':'!', 'quotedbl':'"',
-                        'section':'§', 'dollar':'$', 'percent':'%', 'ampersand':"&",
-                        'slash':"/", 'parenleft':'(', 'parenright':')', 'slash':"/",
-                        'parenleft':'(','parenright':')', 'equal':'=', 'question':'?',
-                        'grave':'`', 'space':" ", 'ssharp':"ß", 'acute':'´', 'plus':'+',
-                        'less':'<', 'comma':',', 'period':'.', 'minus':'-', 'underscore':'_',
-                        'udiaeresis':'ü', 'Udiaeresis':'Ü', 'odiaeresis':'ö', 'Odiaeresis':'Ö',
-                        'adiaeresis':'ä', 'Adiaeresis':'Ä', 'asterisk':'*', 'numbersign':'#',
-                        'apostrophe':"'", 'colon':':', 'semicolon':';', 'greater':'>', 'at':'@'}
-        key = event.keysym
-        if key in letters: return key
-        if key in special_keys: return special_keys[key]
-        if key == 'Shift_R': return
-        if key == 'Shift_L': return
-        return
-
-    def move_cursor_mark(self):
+    def move_cursor_mark(self, step):
         line, column = tuple(map(int, str.split(self.index('cursor_mark'), ".")))
-        self.mark_set("cursor_mark", "%d.%d" % (line, column + 1))
+        self.mark_set("cursor_mark", "%d.%d" % (line, column + step))
+    def move_good_mark(self, step):
+        line, column = tuple(map(int, str.split(self.index('good_mark'), ".")))
+        self.mark_set("good_mark", "%d.%d" % (line, column + step))
 
     def remove_cursor(self):
         self.tag_remove("cursor", "cursor_mark")
@@ -76,7 +104,7 @@ train_text = "A general theory of cookies may be formulated this way. Despite it
 # Define text box with scrollbar
 vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
 vbar.pack(side=tk.RIGHT,fill=tk.Y)
-train = TrainText()
+train = TrainText(top_frame, train_text)
 train.pack(expand=True, fill="both")
 vbar.config(command=train.yview)
 # Mainloop
