@@ -1,6 +1,8 @@
 import tkinter as tk
 from six.moves import cPickle as pickle
 import matplotlib.pyplot as plt
+import wikipedia
+import random
 import time
 
 PROGRESS_FILE = "progress.p"
@@ -51,11 +53,12 @@ class TrainText(tk.Text):
             self.characters = 0
             self.words = 0
             self.mistakes = 0
-            for text in self.texts:
-                self.characters += len(text)
-                self.words += len(text.split())
-                self.insert(tk.END, text)
-                self.insert(tk.END, '\u00B6\n')
+            text = self.get_wiki_text()
+            # for text in self.texts:
+            self.characters += len(text)
+            self.words += len(text.split())
+            self.insert(tk.END, text)
+            self.insert(tk.END, '\u00B6\n')
             self.mark_set("cursor_mark", "0.0")
             self.mark_set("good_mark", "0.0")
             self.tag_add("cursor", "cursor_mark")
@@ -164,7 +167,20 @@ class TrainText(tk.Text):
             print(score_series)
         except (OSError, IOError):  # No progress file yet available
             print("No data")
-
+    def get_wiki_text(self):
+        wiki_list = wikipedia.page("Wikipedia:Featured articles").links
+        pagina = wikipedia.page(random.choice(wiki_list))
+        text = pagina.summary
+        if text.split('.')[0][-2:] == "Sr": i = 1
+        else: i = 0
+        check_brackets = text.split('.')[i]
+        if '(' and ')' in check_brackets:
+            a = check_brackets.index('(')
+            b = check_brackets.index(')')
+            in_brackets = check_brackets[a - 1:b + 1]
+            no_brackets = check_brackets.replace(in_brackets, '')
+            text = text.replace(check_brackets, no_brackets)
+        return text
 
 # Finally not in the class
 def plot_progress():
@@ -172,6 +188,7 @@ def plot_progress():
         wpm_series, acc_series, score_series = pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
     except (OSError, IOError):  # No progress file yet available
         print("No data")
+        return
     xs = [x for x in range(len(wpm_series))]
     plt.subplot(3, 1, 1)
     plt.title("Words per minute")
