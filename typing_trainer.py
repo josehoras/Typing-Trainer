@@ -22,6 +22,34 @@ SPECIAL_KEYS = {'degree': '°', 'asciicircum': '^', 'exclam': '!', 'quotedbl': '
                 'adiaeresis': 'ä', 'Adiaeresis': 'Ä', 'asterisk': '*', 'numbersign': '#',
                 'apostrophe': "'", 'colon': ':', 'semicolon': ';', 'greater': '>', 'at': '@'}
 
+def format(txt):
+    f_sent_l_word = txt.split('.')[0].split()[-1]
+    print(f_sent_l_word)
+    # Remove brakets in first sentence, that often includes non keyboard characters
+    if f_sent_l_word == "Sr" or len(f_sent_l_word) == 1:
+        i = 1
+    else:
+        i = 0
+    check_brackets = txt.split('.')[i]
+    if '(' and ')' in check_brackets:
+        a = check_brackets.index('(')
+        b = check_brackets.index(')')
+        in_brackets = check_brackets[a - 1:b + 1]
+        no_brackets = check_brackets.replace(in_brackets, '')
+        txt = txt.replace(check_brackets, no_brackets)
+    ntext = txt
+    h = 0
+    for i in range(len(txt)):
+        if txt[i] == "\n":
+            print(i)
+            ntext = ntext[:i+h] + "\u00B6" + ntext[i+h:]
+            h += 1
+        if txt[i] == "–":
+            print(txt[i])
+            ntext = ntext[:i+h] + "-" + ntext[i+h+1:]
+    return ntext
+
+
 class TrainText(tk.Text):
     def __init__(self, frame, texts=[]):
         super().__init__(frame, wrap=tk.WORD, bg="white", height=10, width=60,
@@ -170,18 +198,8 @@ class TrainText(tk.Text):
         wiki_list = wikipedia.page("Wikipedia:Featured articles").links
         pagina = wikipedia.page(random.choice(wiki_list))
         text = pagina.summary
-        f_sent_l_word = text.split('.')[0].split()[-1]
-        print(f_sent_l_word)
-        if f_sent_l_word == "Sr" or len(f_sent_l_word)==1:
-            i = 1
-        else: i = 0
-        check_brackets = text.split('.')[i]
-        if '(' and ')' in check_brackets:
-            a = check_brackets.index('(')
-            b = check_brackets.index(')')
-            in_brackets = check_brackets[a - 1:b + 1]
-            no_brackets = check_brackets.replace(in_brackets, '')
-            text = text.replace(check_brackets, no_brackets)
+
+        text = format(text)
         return text
 
 # Finally not in the class
