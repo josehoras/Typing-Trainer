@@ -52,7 +52,7 @@ def format(txt):
 
 class TrainText(tk.Text):
     def __init__(self, frame, texts=[]):
-        super().__init__(frame, wrap=tk.WORD, bg="white", height=10, width=60,
+        super().__init__(frame, wrap=tk.WORD, bg="white", height=20, width=70,
                          font=('monospace', 14), yscrollcommand=vbar.set)
         self.tag_config("cursor", background="yellow", foreground="black")
         self.tag_config("good", background="white", foreground="green")
@@ -60,27 +60,31 @@ class TrainText(tk.Text):
 
         self.start = 0
         self.finish_time = 0
-        self.screens = ['Welcome', 'Training', 'Summary']
+        self.screens = ['Welcome', 'Loading', 'Training', 'Summary']
         self.status = 'Welcome'
         self.texts = texts
         self.characters = 0
         self.words = 0
         self.mistakes = 0
         self.show()
-        # self.save_progress(1.5, 2, 0.5)
-        # self.show_progress()
         self.bind_all('<Key>', self.type)
 
     def show(self):
         self.config(state=tk.NORMAL)
+
         if self.status == "Welcome":
             self.insert(tk.END, "Welcome!\n\n")
-            self.insert(tk.END, "Press any key to start the exercise.")
+            self.insert(tk.END, "Press any key to load the next text.")
+        elif self.status == "Loading":
+            self.insert(tk.END, "Loading Wikipedia page...")
+            root.update()
+            self.text = self.get_wiki_text()
+            self.insert(tk.END, "\n\nPress any key to start the exercise.")
         elif self.status == "Training":
             self.characters = 0
             self.words = 0
             self.mistakes = 0
-            text = self.get_wiki_text()
+            text = self.text
             # for text in self.texts:
             self.characters += len(text)
             self.words += len(text.split())
@@ -104,6 +108,7 @@ class TrainText(tk.Text):
             summary.append("Words per minute: %.1f\n" % wpm)
             summary.append("Accuracy: %.1f%%\n" % acc)
             summary.append("Score: %.2f\n" % score)
+            summary.append("\nPress any key to continue training.")
             self.save_progress(wpm, acc, score)
             for line in summary:
                 self.insert(tk.END, line)
@@ -113,6 +118,8 @@ class TrainText(tk.Text):
         self.config(state=tk.NORMAL)
         self.delete("0.0", tk.END)
         if self.status == "Welcome":
+            self.status = "Loading"
+        elif self.status == "Loading":
             self.status = "Training"
         elif self.status == "Training":
             self.status = "Summary"
@@ -198,8 +205,8 @@ class TrainText(tk.Text):
         wiki_list = wikipedia.page("Wikipedia:Featured articles").links
         pagina = wikipedia.page(random.choice(wiki_list))
         text = pagina.summary
-
         text = format(text)
+
         return text
 
 # Finally not in the class
