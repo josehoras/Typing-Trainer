@@ -125,7 +125,12 @@ class TrainText(tk.Text):
             self.status = "Summary"
             self.finish_time = time.time() - self.start
         elif self.status == "Summary":
-            self.status = "Training"
+            self.status = "Loading"
+        self.show()
+    def reload_text(self):
+        self.config(state=tk.NORMAL)
+        self.delete("0.0", tk.END)
+        self.status = "Loading"
         self.show()
 
     def get_type_char(self, event):
@@ -236,7 +241,10 @@ def plot_progress():
     plt.setp(plt.gca(), xticklabels=[], xticks=[])
     plt.show()
 
-
+# Define train text
+train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
+train_text2 = "A general theory of cookies may be formulated this way."
+train_texts = [train_text1]
 # Create main window
 root = tk.Tk()
 root.title("Typing Trainer")
@@ -246,6 +254,12 @@ bottom_frame = tk.Frame(root,width=100,height=100)
 bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
 top_frame = tk.Frame(root,width=100,height=100)
 top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
+# Define text box with scrollbar
+vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
+vbar.pack(side=tk.RIGHT,fill=tk.Y)
+train = TrainText(top_frame, train_texts)
+train.pack(expand=True, fill="both")
+vbar.config(command=train.yview)
 # Create quit button
 bt = tk.Button(bottom_frame, text='Quit', command=root.destroy)
 bt.pack(side=tk.BOTTOM)
@@ -254,17 +268,12 @@ bt.pack(side=tk.RIGHT, padx=10, pady=5)
 bprogress = tk.Button(bottom_frame, text='Progress', command=plot_progress)
 bprogress.pack(side=tk.BOTTOM)
 bprogress.pack(side=tk.LEFT, padx=10, pady=5)
-# Define train text
-train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
-train_text2 = "A general theory of cookies may be formulated this way."
-train_texts = [train_text1]
+# Create reload text button
+breload = tk.Button(bottom_frame, text='Reload Text', command=train.reload_text)
+breload.pack(side=tk.BOTTOM)
+breload.pack(side=tk.LEFT, padx=10, pady=5)
 
-# Define text box with scrollbar
-vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
-vbar.pack(side=tk.RIGHT,fill=tk.Y)
 
-train = TrainText(top_frame, train_texts)
-train.pack(expand=True, fill="both")
-vbar.config(command=train.yview)
+
 # Mainloop
 root.mainloop()
