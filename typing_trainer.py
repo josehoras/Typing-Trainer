@@ -41,11 +41,9 @@ def format(txt):
     h = 0
     for i in range(len(txt)):
         if txt[i] == "\n":
-            print(i)
             ntext = ntext[:i+h] + "\u00B6" + ntext[i+h:]
             h += 1
-        if txt[i] == "–":
-            print(txt[i])
+        if txt[i] == "–" or txt[i] == "—":
             ntext = ntext[:i+h] + "-" + ntext[i+h+1:]
     return ntext
 
@@ -95,6 +93,7 @@ class TrainText(tk.Text):
             self.tag_add("cursor", "cursor_mark")
             self.start = time.time()
         elif self.status == "Summary":
+            word_count_var.set(0)
             min = int(self.finish_time / 60)
             sec = self.finish_time % 60
             cps = self.characters / self.finish_time
@@ -207,11 +206,26 @@ class TrainText(tk.Text):
         except (OSError, IOError):  # No progress file yet available
             print("No data")
     def get_wiki_text(self):
+        max_length = int(bmax_words.get())
         wiki_list = wikipedia.page("Wikipedia:Featured articles").links
-        pagina = wikipedia.page(random.choice(wiki_list))
-        text = pagina.summary
+        go = 0
+        while go==0:
+            pagina = wikipedia.page(random.choice(wiki_list))
+            text = pagina.summary
+            print(len(text.split()), " ", int(max_length), " ")
+            if len(text.split()) <= max_length and len(text.split()) > max_length/2:
+                go = 1
+            else:
+                for i in reversed(range(1, len(text.split("\n")))):
+                    print(i)
+                    shorter_text = ''.join(text.split("\n")[0:i])
+                    print(len(shorter_text.split()))
+                    if len(shorter_text.split()) <= max_length and len(shorter_text.split()) > max_length/2:
+                        text = shorter_text
+                        go = 1
+                        break
         text = format(text)
-
+        word_count_var.set(len(text.split()))
         return text
 
 # Finally not in the class
@@ -252,28 +266,47 @@ root.minsize(70, 38)
 # Create frames in window
 bottom_frame = tk.Frame(root,width=100,height=100)
 bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
-top_frame = tk.Frame(root,width=100,height=100)
+top_frame = tk.Frame(root,width=800,height=700)
 top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
+center_frame = tk.Frame(root,width=100,height=100)
+center_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
 # Define text box with scrollbar
-vbar = tk.Scrollbar(top_frame,orient=tk.VERTICAL)
+vbar = tk.Scrollbar(center_frame,orient=tk.VERTICAL)
 vbar.pack(side=tk.RIGHT,fill=tk.Y)
-train = TrainText(top_frame, train_texts)
+train = TrainText(center_frame, train_texts)
 train.pack(expand=True, fill="both")
 vbar.config(command=train.yview)
 # Create quit button
-bt = tk.Button(bottom_frame, text='Quit', command=root.destroy)
+bt = tk.Button(bottom_frame, text='Quit', font=10, command=root.destroy)
 bt.pack(side=tk.BOTTOM)
 bt.pack(side=tk.RIGHT, padx=10, pady=5)
 # Create show progress button
-bprogress = tk.Button(bottom_frame, text='Progress', command=plot_progress)
-bprogress.pack(side=tk.BOTTOM)
+bprogress = tk.Button(bottom_frame, text='Progress', font=10, command=plot_progress)
+# bprogress.pack(side=tk.BOTTOM)
 bprogress.pack(side=tk.LEFT, padx=10, pady=5)
 # Create reload text button
-breload = tk.Button(bottom_frame, text='Reload Text', command=train.reload_text)
-breload.pack(side=tk.BOTTOM)
+breload = tk.Button(bottom_frame, text='Reload Text', font=10, command=train.reload_text)
+# breload.pack(side=tk.BOTTOM)
 breload.pack(side=tk.LEFT, padx=10, pady=5)
+# Create max words list
+w = tk.Label(top_frame, text="Max. words: ", font=10)
+w.pack(side=tk.LEFT, padx=5, pady=5)
+var = tk.StringVar()
+bmax_words = tk.Spinbox(top_frame, values=(100, 200, 300, 400, 500), textvariable=var,
+                        bg="white", width=5, justify=tk.CENTER, state='readonly')
+var.set(300) # default value
+bmax_words.pack(side=tk.LEFT, padx=0, pady=5)
+print(bmax_words.get())
+# Create number of words label
 
-
-
+word_count_var = tk.StringVar()
+word_count_var.set(0)
+lword_count = tk.Label(top_frame, textvariable=word_count_var, font=10)
+lword_count.pack(side=tk.RIGHT, padx=5, pady=5)
+lword_count_txt = tk.Label(top_frame, text="# of words: ", font=10)
+lword_count_txt.pack(side=tk.RIGHT, padx=5, pady=5)
+# from tkinter import font
+# for f in set(font.families()):
+#     print(f)
 # Mainloop
 root.mainloop()
