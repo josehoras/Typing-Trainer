@@ -170,7 +170,10 @@ class TrainText(tk.Text):
         wiki_list = wikipedia.page("Wikipedia:Featured articles").links
         pagina = wikipedia.page(random.choice(wiki_list))
         text = pagina.summary
-        if text.split('.')[0][-2:] == "Sr": i = 1
+        f_sent_l_word = text.split('.')[0].split()[-1]
+        print(f_sent_l_word)
+        if f_sent_l_word == "Sr" or len(f_sent_l_word)==1:
+            i = 1
         else: i = 0
         check_brackets = text.split('.')[i]
         if '(' and ')' in check_brackets:
@@ -211,6 +214,7 @@ def plot_progress():
 
 # Create main window
 root = tk.Tk()
+root.title("Typing Trainer")
 root.minsize(70, 38)
 # Create frames in window
 bottom_frame = tk.Frame(root,width=100,height=100)
