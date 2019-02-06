@@ -54,9 +54,13 @@ class TrainText(tk.Text):
         super().__init__(frame, wrap=tk.WORD, bg="white", height=20, width=70,
                          font=('monospace', 14), yscrollcommand=vbar.set,
                          spacing1=2, padx=5, pady=10, borderwidth=4)
-        self.tag_config("cursor", background="yellow", foreground="black")
+
         self.tag_config("good", background="white", foreground="green")
         self.tag_config("bad", background="lavender blush", foreground="red")
+        self.tag_config("corrected", background="lavender", foreground="brown")
+        self.tag_config("cursor", background="yellow", foreground="black")
+        self.bad = set()
+        self.corrected = set()
 
         self.start = 0
         self.finish_time = 0
@@ -147,16 +151,20 @@ class TrainText(tk.Text):
             cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
             if key:
                 move_good = (key==cursor_char or (key=="newline" and cursor_char=='\u00B6') or key==-1)
+                if move_good and key!=-1 and self.index('cursor_mark') in self.bad:
+                    self.bad.remove(self.index('cursor_mark'))
+                    self.corrected.add(self.index('cursor_mark'))
+                if not move_good or self.compare('cursor_mark', '!=', 'good_mark') and key!=-1:
+                    self.mistakes += 1
+                    self.bad.add(self.index('cursor_mark'))
                 self.remove_tags()
                 self.update_marks(forward=(key!=-1), move_good=move_good)
+                print(self.index('cursor_mark'))
                 self.add_tags()
-                if not move_good: self.mistakes += 1
+
+
             if self.check_finish():
                 self.change_status()
-            # self.see('cursor_mark')
-            print(self.dlineinfo('cursor_mark'))
-            print(self.winfo_height())
-            # self.yview_scroll(1, 'units')
             self.check_and_scroll()
         else:
             self.change_status()
@@ -186,12 +194,19 @@ class TrainText(tk.Text):
 
     def remove_tags(self):
         self.tag_remove("good", "0.0", "good_mark")
-        self.tag_remove("bad", 'good_mark', 'cursor_mark')
         self.tag_remove("cursor", "cursor_mark")
+        for m in self.bad:
+            self.tag_remove('bad', m)
+        for c in self.corrected:
+            self.tag_remove('corrected', c)
+
     def add_tags(self):
         self.tag_add("good", "0.0", 'good_mark')
-        self.tag_add("bad", 'good_mark', 'cursor_mark')
         self.tag_add("cursor", "cursor_mark")
+        for m in self.bad:
+            self.tag_add('bad', m)
+        for c in self.corrected:
+            self.tag_add('corrected', c)
 
     def check_finish(self):
         line, column = tuple(map(int, str.split(self.index('good_mark'), ".")))
