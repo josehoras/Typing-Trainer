@@ -51,13 +51,13 @@ def format(txt):
 
 class TrainText(tk.Text):
     def __init__(self, frame, texts=[]):
-        super().__init__(frame, wrap=tk.WORD, bg="white", height=20, width=70,
+        super().__init__(frame, wrap=tk.WORD, bg="white smoke", height=20, width=70,
                          font=('monospace', 14), yscrollcommand=vbar.set,
                          spacing1=2, padx=5, pady=10, borderwidth=4)
 
-        self.tag_config("good", background="white", foreground="green")
-        self.tag_config("bad", background="lavender blush", foreground="red")
-        self.tag_config("corrected", background="lavender", foreground="brown")
+        self.tag_config("good", background="white smoke", foreground="green")
+        self.tag_config("bad", background="misty rose", foreground="red")
+        self.tag_config("corrected", background="gainsboro", foreground="gold4")
         self.tag_config("cursor", background="yellow", foreground="black")
         self.bad = set()
         self.corrected = set()
@@ -85,6 +85,8 @@ class TrainText(tk.Text):
             self.text = self.get_wiki_text()
             self.insert(tk.END, "\n\nPress any key to start the exercise.")
         elif self.status == "Training":
+            self.bad = set()
+            self.corrected = set()
             self.characters = 0
             self.words = 0
             self.mistakes = 0
@@ -159,10 +161,7 @@ class TrainText(tk.Text):
                     self.bad.add(self.index('cursor_mark'))
                 self.remove_tags()
                 self.update_marks(forward=(key!=-1), move_good=move_good)
-                print(self.index('cursor_mark'))
                 self.add_tags()
-
-
             if self.check_finish():
                 self.change_status()
             self.check_and_scroll()
