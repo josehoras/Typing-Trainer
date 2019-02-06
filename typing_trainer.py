@@ -26,7 +26,8 @@ def format(txt):
     f_sent_l_word = txt.split('.')[0].split()[-1]
     print(f_sent_l_word)
     # Remove brakets in first sentence, that often includes non keyboard characters
-    if f_sent_l_word == "Sr" or len(f_sent_l_word) == 1:
+    forms = ['Sr', 'Jr']
+    if f_sent_l_word in forms or len(f_sent_l_word) == 1:
         i = 1
     else:
         i = 0
@@ -51,7 +52,8 @@ def format(txt):
 class TrainText(tk.Text):
     def __init__(self, frame, texts=[]):
         super().__init__(frame, wrap=tk.WORD, bg="white", height=20, width=70,
-                         font=('monospace', 14), yscrollcommand=vbar.set)
+                         font=('monospace', 14), yscrollcommand=vbar.set,
+                         spacing1=2, padx=5, pady=10, borderwidth=4)
         self.tag_config("cursor", background="yellow", foreground="black")
         self.tag_config("good", background="white", foreground="green")
         self.tag_config("bad", background="lavender blush", foreground="red")
@@ -151,13 +153,24 @@ class TrainText(tk.Text):
                 if not move_good: self.mistakes += 1
             if self.check_finish():
                 self.change_status()
+            # self.see('cursor_mark')
+            print(self.dlineinfo('cursor_mark'))
+            print(self.winfo_height())
+            # self.yview_scroll(1, 'units')
+            self.check_and_scroll()
         else:
             self.change_status()
+    def check_and_scroll(self):
+        cursor_y = self.dlineinfo('cursor_mark')[1]
+        window_height = self.winfo_height()
+        if cursor_y + 30 > window_height:
+            self.yview_scroll(window_height/2, 'pixels')
 
     def update_marks(self, forward=True, move_good=True):
         if move_good and self.compare('cursor_mark', '==', 'good_mark'):
             self.move_mark('good_mark', forward)
         self.move_mark('cursor_mark', forward)
+
     def move_mark(self, mark_name, forward):
         line, column = tuple(map(int, str.split(self.index(mark_name), ".")))
         if forward:
