@@ -221,16 +221,20 @@ class TrainText(tk.Text):
 
     def save_progress(self, wpm, acc, score):
         max_length = int(max_word_text.bmax_words.get())
+        date = time.strftime("%Y-%m-%d %H:%M", time.gmtime())
         try:
-            wpm_series, acc_series, score_series = pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
+            wpm_series, acc_series, score_series, date_series = \
+                pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
         except (OSError, IOError):  # No progress file yet available
             wpm_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
             acc_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
             score_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+            date_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
         wpm_series[max_length].append(wpm)
         acc_series[max_length].append(acc)
         score_series[max_length].append(score)
-        pickle.dump([wpm_series, acc_series, score_series], open(PROGRESS_FILE, 'wb'))
+        date_series[max_length].append(date)
+        pickle.dump([wpm_series, acc_series, score_series, date_series], open(PROGRESS_FILE, 'wb'))
 
     def get_wiki_text(self):
         max_length = int(max_word_text.bmax_words.get())
@@ -290,48 +294,41 @@ class ProgressPlotsWindow(tk.Tk):
 class ProgressPlots():
     def __init__(self):
         try:
-            self.wpm_series, self.acc_series, self.score_series = \
+            self.wpm_series, self.acc_series, self.score_series, self.date_series = \
                 pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
         except (OSError, IOError):  # No progress file yet available
             self.wpm_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
             self.acc_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
             self.score_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+            self.date_series = {100: [], 200: [], 300: [], 400: [], 500: []}
         self.window = ProgressPlotsWindow(self)
 
     def plot_wpm(self):
-        plt.cla()
         max_length = int(self.window.max_word_plot.bmax_words.get())
-        if len(self.wpm_series[max_length]) > 0:
-            xs = [x for x in range(len(self.wpm_series[max_length]))]
-        else: xs = []
+        plt.cla()
         plt.title("Words per minute")
-        plt.scatter(xs, self.wpm_series[max_length])
-        plt.plot(xs, self.wpm_series[max_length])
-        plt.xticks([], [])
+        plt.scatter(self.date_series[max_length], self.wpm_series[max_length])
+        plt.plot(self.date_series[max_length], self.wpm_series[max_length])
+        # plt.xticks([], [])
         plt.ylim(0, 60)
         self.window.canvas.draw()
     def plot_acc(self):
-        plt.cla()
         max_length = int(self.window.max_word_plot.bmax_words.get())
-        if len(self.wpm_series[max_length]) > 0:
-            xs = [x for x in range(len(self.wpm_series[max_length]))]
-        else: xs = []
+        plt.cla()
         plt.title("Accuracy")
-        plt.scatter(xs, self.acc_series[max_length])
-        plt.plot(xs, self.acc_series[max_length])
-        plt.xticks([], [])
+        plt.scatter(self.date_series[max_length], self.acc_series[max_length])
+        plt.plot(self.date_series[max_length], self.acc_series[max_length])
+        # plt.xticks([], [])
         plt.yticks=(80, 90, 100)
         plt.ylim(80, 100)
         self.window.canvas.draw()
     def plot_score(self):
+        max_length = int(self.window.max_word_plot.bmax_words.get())
         plt.cla()
         plt.title("Score")
-        max_length = int(self.window.max_word_plot.bmax_words.get())
-        if len(self.wpm_series[max_length]) > 0:
-            xs = [x for x in range(len(self.wpm_series[max_length]))]
-        else: xs = []
-        plt.scatter(xs, self.score_series[max_length])
-        plt.plot(xs, self.score_series[max_length])
+        plt.scatter(self.date_series[max_length], self.score_series[max_length])
+        plt.plot(self.date_series[max_length], self.score_series[max_length])
+        plt.ylim(0, 10)
         self.window.canvas.draw()
 
 
@@ -383,4 +380,5 @@ lword_count_txt.pack(side=tk.RIGHT, padx=5, pady=5)
 # for f in set(font.families()):
 #     print(f)
 # Mainloop
+print(time.strftime("%Y-%m-%d %H:%M", time.gmtime()))
 root.mainloop()
