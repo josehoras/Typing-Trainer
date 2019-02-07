@@ -1,9 +1,14 @@
 import tkinter as tk
 from six.moves import cPickle as pickle
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.figure import Figure
 import wikipedia
 import random
 import time
+
+matplotlib.use('TkAgg')
 
 PROGRESS_FILE = "progress.p"
 LETTERS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
@@ -233,7 +238,7 @@ class TrainText(tk.Text):
         except (OSError, IOError):  # No progress file yet available
             print("No data")
     def get_wiki_text(self):
-        max_length = int(bmax_words.get())
+        max_length = int(max_word_text.bmax_words.get())
         wiki_list = wikipedia.page("Wikipedia:Featured articles").links
         go = 0
         while go==0:
@@ -254,42 +259,79 @@ class TrainText(tk.Text):
         text = format(text)
         word_count_var.set(len(text.split()))
         return text
-import matplotlib
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.figure import Figure
-matplotlib.use('TkAgg')
-# Finally not in the class
-def plot_progress():
-    try:
-        wpm_series, acc_series, score_series = pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
-    except (OSError, IOError):  # No progress file yet available
-        print("No data")
-        return
-    plots = tk.Tk()
-    plots.title("Plots")
-    f = Figure(figsize=(5,4), dpi=100)
-    xs = [x for x in range(len(wpm_series))]
-    p1 = f.add_subplot(3, 1, 1, xticklabels=[], xticks=[])
-    p1.set_title("Words per minute")
-    p1.scatter(xs,wpm_series)
-    p1.plot(xs,wpm_series)
-    p1.set_ylim(0, 60)
-    p1.xaxis
-    p2= f.add_subplot(3, 1, 2, xticklabels=[], xticks=[], yticks=(80, 90, 100))
-    p2.set_title("Accuracy")
-    p2.scatter(xs,acc_series)
-    p2.plot(xs,acc_series)
-    p2.set_ylim(80, 100)
-    p3 = f.add_subplot(3, 1, 3, xticklabels=[], xticks=[])
-    p3.set_title("Score")
-    p3.scatter(xs,score_series)
-    p3.plot(xs,score_series)
 
-    canvas = FigureCanvasTkAgg(f, master=plots)
-    canvas.draw()
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-    # plots.mainloop()
+
+class WordMaxInput():
+    # Create max words list
+    def __init__(self, parent):
+        w = tk.Label(parent, text="Max. words: ", font=10)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        var = tk.StringVar()
+        self.bmax_words = tk.Spinbox(parent, values=(100, 200, 300, 400, 500), textvariable=var,
+                                bg="white", width=5, justify=tk.CENTER, state='readonly')
+        var.set(300)  # default value
+        self.bmax_words.pack(side=tk.LEFT, padx=0, pady=5)
+
+
+class ProgressPlotsWindow(tk.Tk):
+    def __init__(self, p):
+        super().__init__()
+        self.title("Progress")
+        self.bottom_frame = tk.Frame(self,width=100,height=100)
+        self.bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
+        self.top_frame = tk.Frame(self,width=100,height=100)
+        self.top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
+        self.b_score = tk.Button(self.top_frame, text='Score', font=10, command=p.plot_score)
+        self.b_score.pack(side=tk.RIGHT, padx=5, pady=5)
+        self.b_acc = tk.Button(self.top_frame, text='Accuracy', font=10, command=p.plot_acc)
+        self.b_acc.pack(side=tk.RIGHT, padx=5, pady=5)
+        self.b_wpm = tk.Button(self.top_frame, text='Words per minute', font=10, command=p.plot_wpm)
+        self.b_wpm.pack(side=tk.RIGHT, padx=5, pady=5)
+        self.max_word_plot = WordMaxInput(self.top_frame)
+
+
+class ProgressPlots():
+    def __init__(self):
+        try:
+            self.wpm_series, self.acc_series, self.score_series = \
+                pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
+        except (OSError, IOError):  # No progress file yet available
+            print("No data")
+            return
+        self.plots_window = ProgressPlotsWindow(self)
+        self.f = plt.figure(figsize=(6, 4), dpi=100)
+        # self.ax = self.f.add_subplot(111)
+        self.canvas = FigureCanvasTkAgg(self.f, master=self.plots_window.bottom_frame)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.xs = [x for x in range(len(self.wpm_series))]
+    def plot_wpm(self):
+        plt.cla()
+        plt.title("Words per minute")
+        plt.scatter(self.xs, self.wpm_series)
+        plt.plot(self.xs, self.wpm_series)
+        plt.xticks([], [])
+        plt.ylim(0, 60)
+        self.canvas.draw()
+    def plot_acc(self):
+        plt.cla()
+        plt.title("Accuracy")
+        plt.scatter(self.xs, self.acc_series)
+        plt.plot(self.xs, self.acc_series)
+        plt.xticks([], [])
+        plt.yticks=(80, 90, 100)
+        plt.ylim(80, 100)
+        self.canvas.draw()
+    def plot_score(self):
+        plt.cla()
+        plt.title("Score")
+        plt.scatter(self.xs, self.score_series)
+        plt.plot(self.xs, self.score_series)
+        self.canvas.draw()
+
+
+def start_plots():
+    progress = ProgressPlots()
+    # progress.plot_wpm()
 
 # Define train text
 train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
@@ -302,7 +344,7 @@ root.minsize(70, 38)
 # Create frames in window
 bottom_frame = tk.Frame(root,width=100,height=100)
 bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
-top_frame = tk.Frame(root,width=800,height=700)
+top_frame = tk.Frame(root,width=100,height=100)
 top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
 center_frame = tk.Frame(root,width=100,height=100)
 center_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
@@ -314,27 +356,18 @@ train.pack(expand=True, fill="both")
 vbar.config(command=train.yview)
 # Create quit button
 bt = tk.Button(bottom_frame, text='Quit', font=10, command=root.destroy)
-bt.pack(side=tk.BOTTOM)
 bt.pack(side=tk.RIGHT, padx=10, pady=5)
 # Create show progress button
-bprogress = tk.Button(bottom_frame, text='Progress', font=10, command=plot_progress)
-# bprogress.pack(side=tk.BOTTOM)
+
+bprogress = tk.Button(bottom_frame, text='Progress', font=10, command=start_plots)
 bprogress.pack(side=tk.LEFT, padx=10, pady=5)
 # Create reload text button
 breload = tk.Button(bottom_frame, text='Reload Text', font=10, command=train.reload_text)
-# breload.pack(side=tk.BOTTOM)
 breload.pack(side=tk.LEFT, padx=10, pady=5)
-# Create max words list
-w = tk.Label(top_frame, text="Max. words: ", font=10)
-w.pack(side=tk.LEFT, padx=5, pady=5)
-var = tk.StringVar()
-bmax_words = tk.Spinbox(top_frame, values=(100, 200, 300, 400, 500), textvariable=var,
-                        bg="white", width=5, justify=tk.CENTER, state='readonly')
-var.set(300) # default value
-bmax_words.pack(side=tk.LEFT, padx=0, pady=5)
-print(bmax_words.get())
-# Create number of words label
 
+max_word_text = WordMaxInput(top_frame)
+
+# Create number of words label
 word_count_var = tk.StringVar()
 word_count_var.set(0)
 lword_count = tk.Label(top_frame, textvariable=word_count_var, font=10)
