@@ -220,23 +220,18 @@ class TrainText(tk.Text):
         else: return False
 
     def save_progress(self, wpm, acc, score):
+        max_length = int(max_word_text.bmax_words.get())
         try:
             wpm_series, acc_series, score_series = pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
-            wpm_series.append(wpm)
-            acc_series.append(acc)
-            score_series.append(score)
-            pickle.dump([wpm_series, acc_series, score_series], open(PROGRESS_FILE, 'wb'))
         except (OSError, IOError):  # No progress file yet available
-            pickle.dump([[wpm], [acc], [score]], open(PROGRESS_FILE, 'wb'))
+            wpm_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+            acc_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+            score_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+        wpm_series[max_length].append(wpm)
+        acc_series[max_length].append(acc)
+        score_series[max_length].append(score)
+        pickle.dump([wpm_series, acc_series, score_series], open(PROGRESS_FILE, 'wb'))
 
-    def show_progress(self):
-        try:
-            wpm_series, acc_series, score_series = pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
-            print(wpm_series)
-            print(acc_series)
-            print(score_series)
-        except (OSError, IOError):  # No progress file yet available
-            print("No data")
     def get_wiki_text(self):
         max_length = int(max_word_text.bmax_words.get())
         wiki_list = wikipedia.page("Wikipedia:Featured articles").links
@@ -298,23 +293,32 @@ class ProgressPlots():
             self.wpm_series, self.acc_series, self.score_series = \
                 pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
         except (OSError, IOError):  # No progress file yet available
-            print("No data")
-            return
+            self.wpm_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+            self.acc_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+            self.score_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
         self.window = ProgressPlotsWindow(self)
-        self.xs = [x for x in range(len(self.wpm_series))]
+
     def plot_wpm(self):
         plt.cla()
+        max_length = int(self.window.max_word_plot.bmax_words.get())
+        if len(self.wpm_series[max_length]) > 0:
+            xs = [x for x in range(len(self.wpm_series[max_length]))]
+        else: xs = []
         plt.title("Words per minute")
-        plt.scatter(self.xs, self.wpm_series)
-        plt.plot(self.xs, self.wpm_series)
+        plt.scatter(xs, self.wpm_series[max_length])
+        plt.plot(xs, self.wpm_series[max_length])
         plt.xticks([], [])
         plt.ylim(0, 60)
         self.window.canvas.draw()
     def plot_acc(self):
         plt.cla()
+        max_length = int(self.window.max_word_plot.bmax_words.get())
+        if len(self.wpm_series[max_length]) > 0:
+            xs = [x for x in range(len(self.wpm_series[max_length]))]
+        else: xs = []
         plt.title("Accuracy")
-        plt.scatter(self.xs, self.acc_series)
-        plt.plot(self.xs, self.acc_series)
+        plt.scatter(xs, self.acc_series[max_length])
+        plt.plot(xs, self.acc_series[max_length])
         plt.xticks([], [])
         plt.yticks=(80, 90, 100)
         plt.ylim(80, 100)
@@ -322,8 +326,12 @@ class ProgressPlots():
     def plot_score(self):
         plt.cla()
         plt.title("Score")
-        plt.scatter(self.xs, self.score_series)
-        plt.plot(self.xs, self.score_series)
+        max_length = int(self.window.max_word_plot.bmax_words.get())
+        if len(self.wpm_series[max_length]) > 0:
+            xs = [x for x in range(len(self.wpm_series[max_length]))]
+        else: xs = []
+        plt.scatter(xs, self.score_series[max_length])
+        plt.plot(xs, self.score_series[max_length])
         self.window.canvas.draw()
 
 
