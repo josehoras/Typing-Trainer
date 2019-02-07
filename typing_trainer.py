@@ -3,7 +3,7 @@ from six.moves import cPickle as pickle
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.figure import Figure
+import datetime
 import wikipedia
 import random
 import time
@@ -276,10 +276,10 @@ class ProgressPlotsWindow(tk.Tk):
     def __init__(self, p):
         super().__init__()
         self.title("Progress")
-        self.bottom_frame = tk.Frame(self,width=100,height=100)
-        self.bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
         self.top_frame = tk.Frame(self,width=100,height=100)
         self.top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
+        self.bottom_frame = tk.Frame(self,width=100,height=100)
+        self.bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
         self.b_score = tk.Button(self.top_frame, text='Score', font=10, command=p.plot_score)
         self.b_score.pack(side=tk.RIGHT, padx=5, pady=5)
         self.b_acc = tk.Button(self.top_frame, text='Accuracy', font=10, command=p.plot_acc)
@@ -305,29 +305,39 @@ class ProgressPlots():
 
     def plot_wpm(self):
         max_length = int(self.window.max_word_plot.bmax_words.get())
+        dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in self.date_series[max_length]]
+        dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
         plt.cla()
         plt.title("Words per minute")
-        plt.scatter(self.date_series[max_length], self.wpm_series[max_length])
-        plt.plot(self.date_series[max_length], self.wpm_series[max_length])
-        # plt.xticks([], [])
+        plt.scatter(dates_f, self.wpm_series[max_length])
+        plt.plot(dates_f, self.wpm_series[max_length])
+        plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
+        plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
         plt.ylim(0, 60)
         self.window.canvas.draw()
     def plot_acc(self):
         max_length = int(self.window.max_word_plot.bmax_words.get())
+        dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in self.date_series[max_length]]
+        dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
         plt.cla()
         plt.title("Accuracy")
-        plt.scatter(self.date_series[max_length], self.acc_series[max_length])
-        plt.plot(self.date_series[max_length], self.acc_series[max_length])
-        # plt.xticks([], [])
+        plt.scatter(dates_f, self.acc_series[max_length])
+        plt.plot(dates_f, self.acc_series[max_length])
+        plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
+        plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
         plt.yticks=(80, 90, 100)
         plt.ylim(80, 100)
         self.window.canvas.draw()
     def plot_score(self):
         max_length = int(self.window.max_word_plot.bmax_words.get())
+        dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in self.date_series[max_length]]
+        dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
         plt.cla()
         plt.title("Score")
-        plt.scatter(self.date_series[max_length], self.score_series[max_length])
-        plt.plot(self.date_series[max_length], self.score_series[max_length])
+        plt.scatter(dates_f, self.score_series[max_length])
+        plt.plot(dates_f, self.score_series[max_length])
+        plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
+        plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
         plt.ylim(0, 10)
         self.window.canvas.draw()
 
