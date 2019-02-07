@@ -288,7 +288,9 @@ class ProgressPlotsWindow(tk.Tk):
         self.b_wpm = tk.Button(self.top_frame, text='Words per minute', font=10, command=p.plot_wpm)
         self.b_wpm.pack(side=tk.RIGHT, padx=5, pady=5)
         self.max_word_plot = WordMaxInput(self.top_frame)
-
+        self.fig = plt.figure(figsize=(6, 4), dpi=100)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.bottom_frame)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
 class ProgressPlots():
     def __init__(self):
@@ -298,11 +300,7 @@ class ProgressPlots():
         except (OSError, IOError):  # No progress file yet available
             print("No data")
             return
-        self.plots_window = ProgressPlotsWindow(self)
-        self.f = plt.figure(figsize=(6, 4), dpi=100)
-        # self.ax = self.f.add_subplot(111)
-        self.canvas = FigureCanvasTkAgg(self.f, master=self.plots_window.bottom_frame)
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.window = ProgressPlotsWindow(self)
         self.xs = [x for x in range(len(self.wpm_series))]
     def plot_wpm(self):
         plt.cla()
@@ -311,7 +309,7 @@ class ProgressPlots():
         plt.plot(self.xs, self.wpm_series)
         plt.xticks([], [])
         plt.ylim(0, 60)
-        self.canvas.draw()
+        self.window.canvas.draw()
     def plot_acc(self):
         plt.cla()
         plt.title("Accuracy")
@@ -320,18 +318,17 @@ class ProgressPlots():
         plt.xticks([], [])
         plt.yticks=(80, 90, 100)
         plt.ylim(80, 100)
-        self.canvas.draw()
+        self.window.canvas.draw()
     def plot_score(self):
         plt.cla()
         plt.title("Score")
         plt.scatter(self.xs, self.score_series)
         plt.plot(self.xs, self.score_series)
-        self.canvas.draw()
+        self.window.canvas.draw()
 
 
 def start_plots():
-    progress = ProgressPlots()
-    # progress.plot_wpm()
+    ProgressPlots().plot_wpm()
 
 # Define train text
 train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
