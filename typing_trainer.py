@@ -254,7 +254,11 @@ class TrainText(tk.Text):
         text = format(text)
         word_count_var.set(len(text.split()))
         return text
-
+import matplotlib
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.figure import Figure
+matplotlib.use('TkAgg')
 # Finally not in the class
 def plot_progress():
     try:
@@ -262,25 +266,30 @@ def plot_progress():
     except (OSError, IOError):  # No progress file yet available
         print("No data")
         return
+    plots = tk.Tk()
+    plots.title("Plots")
+    f = Figure(figsize=(5,4), dpi=100)
     xs = [x for x in range(len(wpm_series))]
-    plt.subplot(3, 1, 1)
-    plt.title("Words per minute")
-    plt.scatter(xs,wpm_series)
-    plt.plot(xs,wpm_series)
-    plt.ylim(0, 60)
-    plt.setp(plt.gca(), xticklabels=[], xticks=[])#, yticks=(0, 90, 100))
-    plt.subplot(3, 1, 2)
-    plt.title("Accuracy")
-    plt.scatter(xs,acc_series)
-    plt.plot(xs,acc_series)
-    plt.ylim(80, 100)
-    plt.setp(plt.gca(), xticklabels=[], xticks=[], yticks=(80, 90, 100))
-    plt.subplot(3, 1, 3)
-    plt.title("Score")
-    plt.scatter(xs,score_series)
-    plt.plot(xs,score_series)
-    plt.setp(plt.gca(), xticklabels=[], xticks=[])
-    plt.show()
+    p1 = f.add_subplot(3, 1, 1, xticklabels=[], xticks=[])
+    p1.set_title("Words per minute")
+    p1.scatter(xs,wpm_series)
+    p1.plot(xs,wpm_series)
+    p1.set_ylim(0, 60)
+    p1.xaxis
+    p2= f.add_subplot(3, 1, 2, xticklabels=[], xticks=[], yticks=(80, 90, 100))
+    p2.set_title("Accuracy")
+    p2.scatter(xs,acc_series)
+    p2.plot(xs,acc_series)
+    p2.set_ylim(80, 100)
+    p3 = f.add_subplot(3, 1, 3, xticklabels=[], xticks=[])
+    p3.set_title("Score")
+    p3.scatter(xs,score_series)
+    p3.plot(xs,score_series)
+
+    canvas = FigureCanvasTkAgg(f, master=plots)
+    canvas.draw()
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+    # plots.mainloop()
 
 # Define train text
 train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
