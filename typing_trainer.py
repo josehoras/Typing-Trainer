@@ -55,7 +55,7 @@ def format(txt):
 
 
 class TrainText(tk.Text):
-    def __init__(self, frame, texts=[]):
+    def __init__(self, frame, vbar, max_words, word_counter):
         super().__init__(frame, wrap=tk.WORD, bg="white smoke", height=20, width=70,
                          font=('monospace', 14), yscrollcommand=vbar.set,
                          spacing1=2, padx=5, pady=10, borderwidth=4)
@@ -67,54 +67,54 @@ class TrainText(tk.Text):
         self.bad = set()
         self.corrected = set()
 
+        self.bind_all('<Key>', self.type)
+
         self.start = 0
         self.finish_time = 0
         self.screens = ['Welcome', 'Loading', 'Training', 'Summary']
-        self.status = 'Welcome'
-        self.texts = texts
+        self.screen_ix = 0
+
+        self.text = ''
         self.characters = 0
-        self.words = 0
+        self.word_counter = word_counter
         self.mistakes = 0
+        self.max_words = max_words
         self.show()
-        self.bind_all('<Key>', self.type)
 
     def show(self):
         self.config(state=tk.NORMAL)
-
-        if self.status == "Welcome":
-            self.insert(tk.END, "Welcome!\n\n")
-            self.insert(tk.END, "Press any key to load the next text.")
-        elif self.status == "Loading":
+        self.delete("0.0", tk.END)
+        screen = self.screens[self.screen_ix]
+        if screen == "Welcome":
+            self.insert(tk.END, "Welcome!\n\nPress any key to load the next text.")
+        elif screen == "Loading":
+            self.characters = 0
+            self.word_counter.set(0)
+            self.mistakes = 0
             self.insert(tk.END, "Loading Wikipedia page...")
-            root.update()
+            self.update()
             self.text = self.get_wiki_text()
+            self.characters = len(self.text)
+            self.word_counter.set(len(self.text.split()))
             self.insert(tk.END, "\n\nPress any key to start the exercise.")
-        elif self.status == "Training":
+        elif screen == "Training":
             self.bad = set()
             self.corrected = set()
-            self.characters = 0
-            self.words = 0
-            self.mistakes = 0
-            text = self.text
-            # for text in self.texts:
-            self.characters += len(text)
-            self.words += len(text.split())
-            self.insert(tk.END, text)
+            self.insert(tk.END, self.text)
             self.insert(tk.END, '\u00B6\n')
             self.mark_set("cursor_mark", "0.0")
             self.mark_set("good_mark", "0.0")
             self.tag_add("cursor", "cursor_mark")
             self.start = time.time()
-        elif self.status == "Summary":
-            word_count_var.set(0)
+        elif screen == "Summary":
+            self.finish_time = time.time() - self.start
             min = int(self.finish_time / 60)
             sec = self.finish_time % 60
             cps = self.characters / self.finish_time
-            wpm = 60 * self.words / self.finish_time
+            wpm = 60 * int(self.word_counter.get()) / self.finish_time
             acc = 100 * (1 - self.mistakes / self.characters)
             score = 2 * cps * acc/100
-            summary = []
-            summary.append("Congratulations!\n")
+            summary = ["Congratulations!\n"]
             summary.append("You did it in %i minutes and %i seconds\n" % (min, sec))
             summary.append("Characters per second: %.1f\n" % cps)
             summary.append("Words per minute: %.1f\n" % wpm)
@@ -127,22 +127,14 @@ class TrainText(tk.Text):
         self.config(state=tk.DISABLED)
 
     def change_status(self):
-        self.config(state=tk.NORMAL)
-        self.delete("0.0", tk.END)
-        if self.status == "Welcome":
-            self.status = "Loading"
-        elif self.status == "Loading":
-            self.status = "Training"
-        elif self.status == "Training":
-            self.status = "Summary"
-            self.finish_time = time.time() - self.start
-        elif self.status == "Summary":
-            self.status = "Loading"
+        if self.screen_ix < 3:
+            self.screen_ix += 1
+        elif self.screen_ix == 3:
+            self.screen_ix = 1
         self.show()
+
     def reload_text(self):
-        self.config(state=tk.NORMAL)
-        self.delete("0.0", tk.END)
-        self.status = "Loading"
+        self.screen_ix = 1
         self.show()
 
     def get_type_char(self, event):
@@ -152,8 +144,9 @@ class TrainText(tk.Text):
         if key == 'BackSpace': return -1
         if key == 'Return': return "newline"
         return
+
     def type(self, event):
-        if self.status == 'Training':
+        if self.screen_ix == 2:
             key = self.get_type_char(event)
             cursor_char = self.get(self.tag_ranges('cursor')[0], self.tag_ranges('cursor')[1])
             if key:
@@ -172,6 +165,7 @@ class TrainText(tk.Text):
             self.check_and_scroll()
         else:
             self.change_status()
+
     def check_and_scroll(self):
         cursor_y = self.dlineinfo('cursor_mark')[1]
         window_height = self.winfo_height()
@@ -192,7 +186,7 @@ class TrainText(tk.Text):
                 column = -step
         else:
             step = -1
-            if column == 0 and line > 1:  ## First line character
+            if column == 0 and line > 1:  # First line character
                 line, column = tuple(map(int, str.split(self.index("%d.end" % (line-1)), ".")))
         self.mark_set(mark_name, "%d.%d" % (line, column + step))
 
@@ -220,7 +214,7 @@ class TrainText(tk.Text):
         else: return False
 
     def save_progress(self, wpm, acc, score):
-        max_length = int(max_word_text.bmax_words.get())
+        max_length = int(self.max_words.bmax_words.get())
         date = time.strftime("%Y-%m-%d %H:%M", time.gmtime())
         try:
             wpm_series, acc_series, score_series, date_series = \
@@ -237,7 +231,7 @@ class TrainText(tk.Text):
         pickle.dump([wpm_series, acc_series, score_series, date_series], open(PROGRESS_FILE, 'wb'))
 
     def get_wiki_text(self):
-        max_length = int(max_word_text.bmax_words.get())
+        max_length = int(self.max_words.bmax_words.get())
         wiki_list = wikipedia.page("Wikipedia:Featured articles").links
         go = 0
         while go==0:
@@ -255,44 +249,11 @@ class TrainText(tk.Text):
                         text = shorter_text
                         go = 1
                         break
-        text = format(text)
-        word_count_var.set(len(text.split()))
-        return text
+        return format(text)
 
-
-class WordMaxInput():
-    # Create max words list
-    def __init__(self, parent):
-        w = tk.Label(parent, text="Max. words: ", font=10)
-        w.pack(side=tk.LEFT, padx=5, pady=5)
-        var = tk.StringVar()
-        self.bmax_words = tk.Spinbox(parent, values=(100, 200, 300, 400, 500), textvariable=var,
-                                bg="white", width=5, justify=tk.CENTER, state='readonly')
-        var.set(300)  # default value
-        self.bmax_words.pack(side=tk.LEFT, padx=0, pady=5)
-
-
-class ProgressPlotsWindow(tk.Tk):
-    def __init__(self, p):
-        super().__init__()
-        self.title("Progress")
-        self.top_frame = tk.Frame(self,width=100,height=100)
-        self.top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
-        self.bottom_frame = tk.Frame(self,width=100,height=100)
-        self.bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
-        self.b_score = tk.Button(self.top_frame, text='Score', font=10, command=p.plot_score)
-        self.b_score.pack(side=tk.RIGHT, padx=5, pady=5)
-        self.b_acc = tk.Button(self.top_frame, text='Accuracy', font=10, command=p.plot_acc)
-        self.b_acc.pack(side=tk.RIGHT, padx=5, pady=5)
-        self.b_wpm = tk.Button(self.top_frame, text='Words per minute', font=10, command=p.plot_wpm)
-        self.b_wpm.pack(side=tk.RIGHT, padx=5, pady=5)
-        self.max_word_plot = WordMaxInput(self.top_frame)
-        self.fig = plt.figure(figsize=(6, 4), dpi=100)
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.bottom_frame)
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
 class ProgressPlots():
-    def __init__(self):
+    def __init__(self, top):
         try:
             self.wpm_series, self.acc_series, self.score_series, self.date_series = \
                 pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
@@ -301,7 +262,7 @@ class ProgressPlots():
             self.acc_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
             self.score_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
             self.date_series = {100: [], 200: [], 300: [], 400: [], 500: []}
-        self.window = ProgressPlotsWindow(self)
+        self.window = ProgressPlotsWindow(self, top)
 
     def plot_wpm(self):
         max_length = int(self.window.max_word_plot.bmax_words.get())
@@ -315,6 +276,7 @@ class ProgressPlots():
         plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
         plt.ylim(0, 60)
         self.window.canvas.draw()
+        # self.window.mainloop()
     def plot_acc(self):
         max_length = int(self.window.max_word_plot.bmax_words.get())
         dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in self.date_series[max_length]]
@@ -342,53 +304,89 @@ class ProgressPlots():
         self.window.canvas.draw()
 
 
-def start_plots():
-    ProgressPlots().plot_wpm()
+def start_plots(top):
+    ProgressPlots(top).plot_wpm()
 
-# Define train text
-train_text1 = "A general theory of cookies may be formulated this way. Despite its descent from cakes and other sweetened breads, the cookie in almost all its forms has abandoned water as a medium for cohesion. Water in cakes serves to make the base (in the case of cakes called batter) as thin as possible, which allows the bubbles - responsible for a cake's fluffiness - to better form. In the cookie, the agent of cohesion has become some form of oil."
-train_text2 = "A general theory of cookies may be formulated this way."
-train_texts = [train_text1]
-# Create main window
-root = tk.Tk()
-root.title("Typing Trainer")
-root.minsize(70, 38)
-# Create frames in window
-bottom_frame = tk.Frame(root,width=100,height=100)
-bottom_frame.pack(side=tk.BOTTOM, expand=False, fill=tk.BOTH)
-top_frame = tk.Frame(root,width=100,height=100)
-top_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
-center_frame = tk.Frame(root,width=100,height=100)
-center_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
-# Define text box with scrollbar
-vbar = tk.Scrollbar(center_frame,orient=tk.VERTICAL)
-vbar.pack(side=tk.RIGHT,fill=tk.Y)
-train = TrainText(center_frame, train_texts)
-train.pack(expand=True, fill="both")
-vbar.config(command=train.yview)
-# Create quit button
-bt = tk.Button(bottom_frame, text='Quit', font=10, command=root.destroy)
-bt.pack(side=tk.RIGHT, padx=10, pady=5)
-# Create show progress button
 
-bprogress = tk.Button(bottom_frame, text='Progress', font=10, command=start_plots)
-bprogress.pack(side=tk.LEFT, padx=10, pady=5)
-# Create reload text button
-breload = tk.Button(bottom_frame, text='Reload Text', font=10, command=train.reload_text)
-breload.pack(side=tk.LEFT, padx=10, pady=5)
+class WordMaxInput():
+    # Create max words list
+    def __init__(self, parent):
+        w = tk.Label(parent, text="Max. words: ", font=10)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        var = tk.StringVar()
+        self.bmax_words = tk.Spinbox(parent, values=(100, 200, 300, 400, 500), textvariable=var,
+                                bg="white", width=5, justify=tk.CENTER, state='readonly')
+        var.set(300)  # default value
+        self.bmax_words.pack(side=tk.LEFT, padx=0, pady=5)
 
-max_word_text = WordMaxInput(top_frame)
 
-# Create number of words label
-word_count_var = tk.StringVar()
-word_count_var.set(0)
-lword_count = tk.Label(top_frame, textvariable=word_count_var, font=10)
-lword_count.pack(side=tk.RIGHT, padx=5, pady=5)
-lword_count_txt = tk.Label(top_frame, text="# of words: ", font=10)
-lword_count_txt.pack(side=tk.RIGHT, padx=5, pady=5)
+class MyFrame(tk.Frame):
+    def __init__(self, top_window, location):
+        super().__init__(top_window)
+        self.pack(side=location, expand=False, fill=tk.BOTH)
+
+
+def my_button(frame, location, txt, command):
+    bt = tk.Button(frame, text=txt, font=10, command=command)
+    bt.pack(side=location, padx=10, pady=5)
+    return bt
+
+
+class ProgressPlotsWindow(tk.Toplevel):
+    def __init__(self, p, top):
+        super().__init__(master=top)
+        self.title("Progress")
+        self.top_frame = MyFrame(self, tk.TOP)
+        self.bottom_frame = MyFrame(self, tk.BOTTOM)
+        self.b_score = my_button(self.top_frame, tk.RIGHT, 'Score', p.plot_score)
+        self.b_acc = my_button(self.top_frame, tk.RIGHT, 'Accuracy', p.plot_acc)
+        self.b_wpm = my_button(self.top_frame, tk.RIGHT, 'Words per minute', p.plot_wpm)
+        self.b_quit = my_button(self.top_frame, tk.RIGHT, 'Quit', self.destroy)
+        self.max_word_plot = WordMaxInput(self.top_frame)
+        self.fig = plt.figure(figsize=(6, 4), dpi=100)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.bottom_frame)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+class WordCounter():
+    def __init__(self, frame):
+        # Create number of words label
+        self.counter = tk.StringVar()
+        self.counter.set(0)
+        lword_count_txt = tk.Label(frame, text="# of words: ", font=10)
+        lword_count = tk.Label(frame, textvariable=self.counter, font=10)
+        lword_count.pack(side=tk.RIGHT, padx=5, pady=5)
+        lword_count_txt.pack(side=tk.RIGHT, padx=5, pady=5)
+
+
+class MyMainWindow(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Typing Trainer")
+        # Create frames in window
+        bottom_frame = MyFrame(self, tk.BOTTOM)
+        top_frame = MyFrame(self, tk.TOP)
+        center_frame = MyFrame(self, tk.TOP)
+        # Set max words
+        max_w_text = WordMaxInput(top_frame)
+        wc = WordCounter(top_frame)
+        # Define text box with scrollbar
+        vbar = tk.Scrollbar(center_frame, orient=tk.VERTICAL)
+        vbar.pack(side=tk.RIGHT, fill=tk.Y)
+        t = TrainText(center_frame, vbar, max_w_text, wc.counter)
+        t.pack(expand=True, fill="both")
+        vbar.config(command=t.yview)
+
+        # Create buttons
+        quit_bt = my_button(bottom_frame, tk.RIGHT, 'Quit', self.destroy)
+        progress_bt = my_button(bottom_frame, tk.LEFT, 'Progress', lambda:start_plots(self))
+        reload_bt = my_button(bottom_frame, tk.LEFT, 'Reload Text', t.reload_text)
+
+
+main = MyMainWindow()
+main.mainloop()
+
 # from tkinter import font
 # for f in set(font.families()):
 #     print(f)
 # Mainloop
 print(time.strftime("%Y-%m-%d %H:%M", time.gmtime()))
-root.mainloop()
