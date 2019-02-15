@@ -85,7 +85,7 @@ class MyMainWindow(tk.Tk):
 class ProgressPlotsWindow(tk.Toplevel):
     def __init__(self, top):
         super().__init__(master=top)
-        self.wm_title("Progress")
+        self.title("Progress")
         self.top_frame = MyFrame(self, tk.TOP)
         self.bottom_frame = MyFrame(self, tk.BOTTOM)
         self.fig = plt.figure(figsize=(6, 4), dpi=100)
