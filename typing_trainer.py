@@ -169,7 +169,7 @@ class TrainText(tk.Text):
     def check_and_scroll(self):
         cursor_y = self.dlineinfo('cursor_mark')[1]
         window_height = self.winfo_height()
-        if cursor_y + 30 > window_height:
+        if cursor_y + 50 > window_height:
             self.yview_scroll(window_height/2, 'pixels')
 
     def update_marks(self, forward=True, move_good=True):
