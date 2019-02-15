@@ -77,9 +77,9 @@ class MyMainWindow(tk.Tk):
         # Define text box with scrollbar
         txt_box = TrainText(center_frame, max_words.value, words.counter)
         # Create buttons
-        quit_bt = MyButton(bottom_frame, tk.RIGHT, 'Quit', self.destroy)
-        progress_bt = MyButton(bottom_frame, tk.LEFT, 'Progress', lambda: ProgressPlotsWindow(self))
-        reload_bt = MyButton(bottom_frame, tk.LEFT, 'Reload Text', txt_box.reload_text)
+        MyButton(bottom_frame, tk.RIGHT, 'Quit', self.destroy)
+        MyButton(bottom_frame, tk.LEFT, 'Progress', lambda: ProgressPlotsWindow(self))
+        MyButton(bottom_frame, tk.LEFT, 'Reload Text', txt_box.reload_text)
 
 
 class ProgressPlotsWindow(tk.Toplevel):
@@ -308,9 +308,6 @@ class TrainText(tk.Text):
         score_series[max_length].append(score)
         date_series[max_length].append(date)
         pickle.dump([wpm_series, acc_series, score_series, date_series], open(PROGRESS_FILE, 'wb'))
-
-
-
 
 
 def format(txt):
