@@ -78,24 +78,53 @@ class MyMainWindow(tk.Tk):
         txt_box = TrainText(center_frame, max_words.value, words.counter)
         # Create buttons
         quit_bt = MyButton(bottom_frame, tk.RIGHT, 'Quit', self.destroy)
-        progress_bt = MyButton(bottom_frame, tk.LEFT, 'Progress', lambda: ProgressPlots(self).plot_wpm())
+        progress_bt = MyButton(bottom_frame, tk.LEFT, 'Progress', lambda: ProgressPlotsWindow(self))
         reload_bt = MyButton(bottom_frame, tk.LEFT, 'Reload Text', txt_box.reload_text)
 
 
 class ProgressPlotsWindow(tk.Toplevel):
-    def __init__(self, p, top):
+    def __init__(self, top):
         super().__init__(master=top)
-        self.title("Progress")
+        self.wm_title("Progress")
         self.top_frame = MyFrame(self, tk.TOP)
         self.bottom_frame = MyFrame(self, tk.BOTTOM)
-        self.b_score = MyButton(self.top_frame, tk.RIGHT, 'Score', p.plot_score)
-        self.b_acc = MyButton(self.top_frame, tk.RIGHT, 'Accuracy', p.plot_acc)
-        self.b_wpm = MyButton(self.top_frame, tk.RIGHT, 'Words per minute', p.plot_wpm)
-        self.b_quit = MyButton(self.top_frame, tk.RIGHT, 'Quit', self.destroy)
-        self.max_word_plot = WordLimit(self.top_frame)
         self.fig = plt.figure(figsize=(6, 4), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.bottom_frame)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.max_words = WordLimit(self.top_frame)
+        wpm, acc, score, date = self.load_data()
+        self.b_score = MyButton(self.top_frame, tk.RIGHT, 'Score',
+                                lambda: self.plot("Score", date[self.get_set()], score[self.get_set()], 0, 10))
+        self.b_acc = MyButton(self.top_frame, tk.RIGHT, 'Accuracy',
+                              lambda: self.plot("Accuracy", date[self.get_set()], acc[self.get_set()], 80, 100))
+        self.b_wpm = MyButton(self.top_frame, tk.RIGHT, 'Words per minute',
+                              lambda: self.plot("Words per minute", date[self.get_set()], wpm[self.get_set()], 0, 60))
+        self.b_quit = MyButton(self.top_frame, tk.RIGHT, 'Quit', self.destroy)
+        self.plot("Words per minute", date[self.get_set()], wpm[self.get_set()], 0, 60)
+
+    def get_set(self):
+        return int(self.max_words.value.get())
+
+    def load_data(self):
+        try:
+            wpm_series, acc_series, score_series, date_series = \
+                pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
+        except (OSError, IOError):  # No progress file yet available
+            empty = {100:[], 200:[], 300:[], 400:[], 500:[]}
+            wpm_series, acc_series, score_series, date_series = [empty] * 4
+        return wpm_series, acc_series, score_series, date_series
+
+    def plot(self, title, xdata, ydata, y_min, y_max):
+        dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in xdata]
+        dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
+        plt.cla()
+        plt.title(title)
+        plt.scatter(dates_f, ydata)
+        plt.plot(dates_f, ydata)
+        plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
+        plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
+        plt.ylim(y_min, y_max)
+        self.canvas.draw()
 
 
 class TrainText(tk.Text):
@@ -281,56 +310,7 @@ class TrainText(tk.Text):
         pickle.dump([wpm_series, acc_series, score_series, date_series], open(PROGRESS_FILE, 'wb'))
 
 
-class ProgressPlots():
-    def __init__(self, top):
-        try:
-            self.wpm_series, self.acc_series, self.score_series, self.date_series = \
-                pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
-        except (OSError, IOError):  # No progress file yet available
-            self.wpm_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
-            self.acc_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
-            self.score_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
-            self.date_series = {100: [], 200: [], 300: [], 400: [], 500: []}
-        self.window = ProgressPlotsWindow(self, top)
 
-    def plot_wpm(self):
-        max_length = int(self.window.max_word_plot.value.get())
-        dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in self.date_series[max_length]]
-        dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
-        plt.cla()
-        plt.title("Words per minute")
-        plt.scatter(dates_f, self.wpm_series[max_length])
-        plt.plot(dates_f, self.wpm_series[max_length])
-        plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
-        plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
-        plt.ylim(0, 60)
-        self.window.canvas.draw()
-        # self.window.mainloop()
-    def plot_acc(self):
-        max_length = int(self.window.max_word_plot.value.get())
-        dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in self.date_series[max_length]]
-        dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
-        plt.cla()
-        plt.title("Accuracy")
-        plt.scatter(dates_f, self.acc_series[max_length])
-        plt.plot(dates_f, self.acc_series[max_length])
-        plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
-        plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
-        plt.yticks=(80, 90, 100)
-        plt.ylim(80, 100)
-        self.window.canvas.draw()
-    def plot_score(self):
-        max_length = int(self.window.max_word_plot.value.get())
-        dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in self.date_series[max_length]]
-        dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
-        plt.cla()
-        plt.title("Score")
-        plt.scatter(dates_f, self.score_series[max_length])
-        plt.plot(dates_f, self.score_series[max_length])
-        plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
-        plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
-        plt.ylim(0, 10)
-        self.window.canvas.draw()
 
 
 def format(txt):
