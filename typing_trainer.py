@@ -77,7 +77,7 @@ class MyMainWindow(tk.Tk):
         # Define text box with scrollbar
         txt_box = TrainText(center_frame, max_words.value, words.counter)
         # Create buttons
-        MyButton(bottom_frame, tk.RIGHT, 'Quit', self.destroy)
+        MyButton(bottom_frame, tk.RIGHT, 'Quit', self.quit)
         MyButton(bottom_frame, tk.LEFT, 'Progress', lambda: ProgressPlotsWindow(self))
         MyButton(bottom_frame, tk.LEFT, 'Reload Text', txt_box.reload_text)
 
@@ -92,27 +92,17 @@ class ProgressPlotsWindow(tk.Toplevel):
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.bottom_frame)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         self.max_words = WordLimit(self.top_frame)
-        wpm, acc, score, date = self.load_data()
+        wpm, acc, score, date = load_data()
         self.b_score = MyButton(self.top_frame, tk.RIGHT, 'Score',
                                 lambda: self.plot("Score", date[self.get_set()], score[self.get_set()], 0, 10))
         self.b_acc = MyButton(self.top_frame, tk.RIGHT, 'Accuracy',
                               lambda: self.plot("Accuracy", date[self.get_set()], acc[self.get_set()], 80, 100))
         self.b_wpm = MyButton(self.top_frame, tk.RIGHT, 'Words per minute',
                               lambda: self.plot("Words per minute", date[self.get_set()], wpm[self.get_set()], 0, 60))
-        self.b_quit = MyButton(self.top_frame, tk.RIGHT, 'Quit', self.destroy)
         self.plot("Words per minute", date[self.get_set()], wpm[self.get_set()], 0, 60)
 
     def get_set(self):
         return int(self.max_words.value.get())
-
-    def load_data(self):
-        try:
-            wpm_series, acc_series, score_series, date_series = \
-                pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
-        except (OSError, IOError):  # No progress file yet available
-            empty = {100:[], 200:[], 300:[], 400:[], 500:[]}
-            wpm_series, acc_series, score_series, date_series = [empty] * 4
-        return wpm_series, acc_series, score_series, date_series
 
     def plot(self, title, xdata, ydata, y_min, y_max):
         dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in xdata]
@@ -216,7 +206,8 @@ class TrainText(tk.Text):
         self.screen_ix = 1
         self.show()
 
-    def get_type_char(self, event):
+    @staticmethod
+    def get_type_char(event):
         key = event.keysym
         if key in LETTERS: return key
         if key in SPECIAL_KEYS: return SPECIAL_KEYS[key]
@@ -293,21 +284,24 @@ class TrainText(tk.Text):
         else: return False
 
     def save_progress(self, wpm, acc, score):
+        wpm_series, acc_series, score_series, date_series = load_data()
         max_length = int(self.max_words.get())
         date = time.strftime("%Y-%m-%d %H:%M", time.gmtime())
-        try:
-            wpm_series, acc_series, score_series, date_series = \
-                pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
-        except (OSError, IOError):  # No progress file yet available
-            wpm_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
-            acc_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
-            score_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
-            date_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
         wpm_series[max_length].append(wpm)
         acc_series[max_length].append(acc)
         score_series[max_length].append(score)
         date_series[max_length].append(date)
         pickle.dump([wpm_series, acc_series, score_series, date_series], open(PROGRESS_FILE, 'wb'))
+
+
+def load_data():
+    try:
+        wpm_series, acc_series, score_series, date_series = \
+            pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
+    except (OSError, IOError):  # No progress file yet available
+        empty = {100:[], 200:[], 300:[], 400:[], 500:[]}
+        wpm_series, acc_series, score_series, date_series = [empty] * 4
+    return wpm_series, acc_series, score_series, date_series
 
 
 def format(txt):
@@ -360,9 +354,11 @@ def get_wiki_text(max_length):
 
 main = MyMainWindow()
 main.mainloop()
+print(time.strftime("%Y-%m-%d %H:%M", time.gmtime()))
+
 
 # from tkinter import font
 # for f in set(font.families()):
 #     print(f)
 # Mainloop
-print(time.strftime("%Y-%m-%d %H:%M", time.gmtime()))
+
