@@ -28,7 +28,12 @@ SPECIAL_KEYS = {'degree': '°', 'asciicircum': '^', 'exclam': '!', 'quotedbl': '
                 'adiaeresis': 'ä', 'Adiaeresis': 'Ä', 'asterisk': '*', 'numbersign': '#',
                 'apostrophe': "'", 'colon': ':', 'semicolon': ';', 'greater': '>', 'at': '@',
                 'twosuperior':'²', 'threesuperior':'³', 'asciitilde':'~', 'mu':'µ', 'bar':'|',
-                'EuroSign':'€', 'backslash':'\\'}
+                'EuroSign':'€', 'backslash':'\\', 'braceleft':'{', 'bracketleft':'[',
+                'braceright':'}', 'bracketright':']',
+                'aacute':'á', 'agrave':'à', 'eacute':'é', 'egrave':'è', 'iacute':'í', 'igrave':'ì',
+                'oacute':'ó', 'ograve':'ò', 'uacute':'ú', 'ugrave':'ù',
+                'Aacute':'Á', 'Agrave':'À', 'Eacute':'É', 'Egrave':'È', 'Iacute':'Í', 'Igrave':'Ì',
+                'Oacute':'Ó', 'Ograve':'Ò', 'Uacute':'Ú', 'Ugrave':'Ù'}
 
 
 class MyFrame(tk.Frame):
@@ -47,15 +52,11 @@ class WordLimit():
     # Create max words list
     def __init__(self, parent, default=300):
         w = tk.Label(parent, text="Max. words: ", font=('TkTextFont', 12))
-        # w.pack(side=tk.LEFT, padx=5, pady=5)
-        # print(parent.grid_size())
         parent.columnconfigure(0, weight=0)
         w.grid(row=0, column=0, padx=10)
-        print(parent.grid_size())
         self.var = tk.IntVar()
         self.value = tk.Spinbox(parent, values=(100, 200, 300, 400, 500), textvariable=self.var,
                                 bg="white", width=5, justify=tk.CENTER, state='readonly', font=('TkTextFont', 11))
-        # self.value.pack(side=tk.LEFT, padx=0, pady=5)
         parent.columnconfigure(1, weight=0)
         self.value.grid(row=0, column=1)
         self.var.set(default)  # default value
@@ -68,9 +69,6 @@ class WordCounter():
         self.counter.set(0)
         lword_count_txt = tk.Label(frame, text="# of words: ", font=('TkTextFont', 12))
         lword_count = tk.Label(frame, textvariable=self.counter, font=('TkTextFont', 12), anchor="w")
-        # lword_count.pack(side=tk.RIGHT, padx=5, pady=5)
-        # lword_count_txt.pack(side=tk.RIGHT, padx=5, pady=5)
-        # frame.columnconfigure(4, weight=0)
         lword_count_txt.grid(row=0, column=4)
         lword_count.grid(row=0, column=5, padx=10)
 
@@ -90,8 +88,6 @@ class WikiLang():
         self.var.set(default)  # default value
 
 
-
-
 class MyMainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -103,15 +99,16 @@ class MyMainWindow(tk.Tk):
         # Set max words and word counter
         self.max_words = WordLimit(top_frame)
         words = WordCounter(top_frame)
+        # Select language
+        self.lang = WikiLang(top_frame)
         # Define text box with scrollbar
-        txt_box = TrainText(center_frame, self.max_words.value, words.counter)
+        txt_box = TrainText(center_frame, self.max_words.value, words.counter, self.lang.value)
         # Create buttons
         MyButton(bottom_frame, tk.RIGHT, 'Quit', self.quit)
         MyButton(bottom_frame, tk.LEFT, 'Progress', lambda: ProgressPlotsWindow(self))
-
-        # Select language
-        self.lang = WikiLang(top_frame)
         MyButton(bottom_frame, tk.LEFT, 'Reload Text', txt_box.reload_text)
+
+
 
 class ProgressPlotsWindow(tk.Toplevel):
     def __init__(self, top):
@@ -158,10 +155,8 @@ class ProgressPlotsWindow(tk.Toplevel):
         plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
         plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
         plt.ylim(self.ylims[plot_nr])
-        # plt.locator_params(axis='x', numticks=10)
         ticks = [x for x in range(0, len(dates_f), int(len(dates_f)/10)+1)]
         if ticks[-1] != (len(dates_f) - 1): ticks[-1] = (len(dates_f)-1)
-        print(ticks, len(dates_f))
         plt.xticks(ticks)
         plt.grid(True, 'major', 'y', ls='--')
         plt.grid(True, 'major', 'x', ls=':', lw=0.3)
@@ -169,7 +164,7 @@ class ProgressPlotsWindow(tk.Toplevel):
 
 
 class TrainText(tk.Text):
-    def __init__(self, frame, max_words, word_counter):
+    def __init__(self, frame, max_words, word_counter, language):
         # Define and place objects
         vbar = tk.Scrollbar(frame, orient=tk.VERTICAL)
         vbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -199,7 +194,9 @@ class TrainText(tk.Text):
         # Define text variables
         self.text = ''
         self.link = ''
-        self.lang = ''
+        self.lang_codes ={'English':'en', "Español":'es', "Deutsch":'de'}
+        self.lang = language
+        print(self.lang)
         self.characters = 0
         self.word_counter = word_counter
         self.mistakes = 0
@@ -219,7 +216,7 @@ class TrainText(tk.Text):
             self.mistakes = 0
             self.insert(tk.END, "Loading Wikipedia page...")
             self.update()
-            self.text, self.link = get_wiki_text(int(self.max_words.get()))
+            self.text, self.link = get_wiki_text(int(self.max_words.get()), self.lang_codes[self.lang.get()])
             self.characters = len(self.text)
             self.word_counter.set(len(self.text.split()))
             self.insert(tk.END, "\n\nPress any key to start the exercise.\n\n")
@@ -279,6 +276,7 @@ class TrainText(tk.Text):
     @staticmethod
     def get_type_char(event):
         key = event.keysym
+        print(key)
         if key in LETTERS: return key
         if key in SPECIAL_KEYS: return SPECIAL_KEYS[key]
         if key == 'BackSpace': return -1
@@ -376,7 +374,7 @@ def load_data():
 
 def format(txt):
     f_sent_l_word = txt.split('.')[0].split()[-1]
-    print(f_sent_l_word)
+    # print(f_sent_l_word)
     # Remove brakets in first sentence, that often includes non keyboard characters
     forms = ['Sr', 'Jr']
     if f_sent_l_word in forms or len(f_sent_l_word) == 1:
@@ -398,17 +396,26 @@ def format(txt):
             h += 1
         if txt[i] == "–" or txt[i] == "—":
             ntext = ntext[:i + h] + "-" + ntext[i + h + 1:]
+        if txt[i] == 'ñ':
+            print('ene')
+            ntext = ntext[:i + h] + "n" + ntext[i + h + 1:]
+        if txt[i] == '\u200b':
+            ntext = ntext[:i + h] + ntext[i + h + 1:]
+            h -= 1
     return ntext
 
 
-def get_wiki_text(max_length):
-    wiki_list = wikipedia.page("Wikipedia:Featured articles").links
+def get_wiki_text(max_length, lang):
+    print(lang)
+    wikipedia.set_lang(lang)
+    wiki = {'en':"Wikipedia:Featured articles", 'es':'Wikipedia:Artículos destacados', 'de':'Wikipedia:Exzellente Artikel'}
+    wiki_list = wikipedia.page(wiki[lang]).links
     go = 0
     while go == 0:
         link = random.choice(wiki_list)
         pagina = wikipedia.page(link)
         text = pagina.summary
-        print(len(text.split()), " ", int(max_length), " ")
+        # print(len(text.split()), " ", int(max_length), " ")
         if max_length >= len(text.split()) > max_length / 1.8:
             text = format(text)
             chars = set(text)
@@ -418,7 +425,7 @@ def get_wiki_text(max_length):
                 go = 1
             else:
                 print(chars)
-                print([char in LETTERS or char in list(SPECIAL_KEYS.values()) for char in chars])
+                print([char for char in chars if not (char in LETTERS or char in list(SPECIAL_KEYS.values()))])
         else:
             for i in reversed(range(1, len(text.split("\n")))):
                 print(i)
@@ -433,9 +440,9 @@ def get_wiki_text(max_length):
                         go = 1
                     else:
                         print(chars)
-                        print([char in LETTERS or char in list(SPECIAL_KEYS.values()) for char in chars])
+                        print([char for char in chars if not (char in LETTERS or char in list(SPECIAL_KEYS.values()))])
                     break
-    return text, 'https://en.wikipedia.org/wiki/' + link
+    return text, 'https://' + lang + '.wikipedia.org/wiki/' + link
 
 
 main = MyMainWindow()
