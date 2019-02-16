@@ -129,13 +129,13 @@ class ProgressPlotsWindow(tk.Toplevel):
         self.b_wpm = tk.Button(self.top_frame, text=self.plots[0], font=('TkTextFont', 12),
                                command=lambda: self.plot(0, self.get_set()))
         self.top_frame.columnconfigure(1, weight=1)
-        self.b_wpm.grid(row=0, column=2)
+        self.b_wpm.grid(row=0, column=2, padx=5)
         self.b_acc = tk.Button(self.top_frame, text=self.plots[1], font=('TkTextFont', 12),
                               command=lambda: self.plot(1, self.get_set()))
-        self.b_acc.grid(row=0, column=3)
+        self.b_acc.grid(row=0, column=3, padx=5)
         self.b_score = tk.Button(self.top_frame, text=self.plots[2], font=('TkTextFont', 12),
                                 command=lambda: self.plot(2, self.get_set()))
-        self.b_score.grid(row=0, column=4, sticky=tk.E)
+        self.b_score.grid(row=0, column=4, sticky=tk.E, padx=5)
 
 
         self.plot(self.current_plot, self.get_set())
