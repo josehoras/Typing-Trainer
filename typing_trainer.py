@@ -34,7 +34,7 @@ SPECIAL_KEYS = {'degree': '°', 'asciicircum': '^', 'exclam': '!', 'quotedbl': '
 class MyFrame(tk.Frame):
     def __init__(self, top_window, location):
         super().__init__(top_window)
-        self.pack(side=location, expand=False, fill=tk.BOTH)
+        self.pack(side=location, expand=True, fill=tk.BOTH)
 
 
 class MyButton(tk.Button):
@@ -47,25 +47,19 @@ class WordLimit():
     # Create max words list
     def __init__(self, parent, default=300):
         w = tk.Label(parent, text="Max. words: ", font=('TkTextFont', 12))
-        w.pack(side=tk.LEFT, padx=5, pady=5)
+        # w.pack(side=tk.LEFT, padx=5, pady=5)
+        # print(parent.grid_size())
+        parent.columnconfigure(0, weight=0)
+        w.grid(row=0, column=0, padx=10)
+        print(parent.grid_size())
         self.var = tk.IntVar()
         self.value = tk.Spinbox(parent, values=(100, 200, 300, 400, 500), textvariable=self.var,
                                 bg="white", width=5, justify=tk.CENTER, state='readonly', font=('TkTextFont', 11))
-        self.value.pack(side=tk.LEFT, padx=0, pady=5)
+        # self.value.pack(side=tk.LEFT, padx=0, pady=5)
+        parent.columnconfigure(1, weight=0)
+        self.value.grid(row=0, column=1)
         self.var.set(default)  # default value
 
-
-class WikiLang():
-    # Create max words list
-    def __init__(self, parent, default="English"):
-        w = tk.Label(parent, text="Language: ", font=('TkTextFont', 12))
-        w.pack(side=tk.LEFT, padx=0, pady=5)
-        self.var = tk.StringVar()
-        self.value = tk.Spinbox(parent, values=("English", "Español", "Deutsch"), textvariable=self.var,
-                                background="cyan", width=10, justify=tk.CENTER, state='readonly', font=('TkTextFont', 12))
-        print(self.value.cget('font'))
-        self.value.pack(side=tk.LEFT, padx=0, pady=5)
-        self.var.set(default)  # default value
 
 class WordCounter():
     def __init__(self, frame):
@@ -73,9 +67,29 @@ class WordCounter():
         self.counter = tk.StringVar()
         self.counter.set(0)
         lword_count_txt = tk.Label(frame, text="# of words: ", font=('TkTextFont', 12))
-        lword_count = tk.Label(frame, textvariable=self.counter, font=('TkTextFont', 12))
-        lword_count.pack(side=tk.RIGHT, padx=5, pady=5)
-        lword_count_txt.pack(side=tk.RIGHT, padx=5, pady=5)
+        lword_count = tk.Label(frame, textvariable=self.counter, font=('TkTextFont', 12), anchor="w")
+        # lword_count.pack(side=tk.RIGHT, padx=5, pady=5)
+        # lword_count_txt.pack(side=tk.RIGHT, padx=5, pady=5)
+        # frame.columnconfigure(4, weight=0)
+        lword_count_txt.grid(row=0, column=4)
+        lword_count.grid(row=0, column=5, padx=10)
+
+
+class WikiLang():
+    # Create max words list
+    def __init__(self, parent, default="English"):
+        w = tk.Label(parent, text="Language: ", font=('TkTextFont', 12))
+        parent.columnconfigure(2, weight=1)
+        w.grid(row=0, column=2, sticky=tk.E)
+        self.var = tk.StringVar()
+        self.value = tk.Spinbox(parent, values=("English", "Español", "Deutsch"), textvariable=self.var,
+                                background="cyan", width=10, justify=tk.CENTER, state='readonly', font=('TkTextFont', 12))
+        print(self.value.cget('font'))
+        parent.columnconfigure(3, weight=1)
+        self.value.grid(row=0, column=3, sticky=tk.W)
+        self.var.set(default)  # default value
+
+
 
 
 class MyMainWindow(tk.Tk):
@@ -94,10 +108,10 @@ class MyMainWindow(tk.Tk):
         # Create buttons
         MyButton(bottom_frame, tk.RIGHT, 'Quit', self.quit)
         MyButton(bottom_frame, tk.LEFT, 'Progress', lambda: ProgressPlotsWindow(self))
-        MyButton(bottom_frame, tk.LEFT, 'Reload Text', txt_box.reload_text)
-        # Select language
-        self.lang = WikiLang(bottom_frame)
 
+        # Select language
+        self.lang = WikiLang(top_frame)
+        MyButton(bottom_frame, tk.LEFT, 'Reload Text', txt_box.reload_text)
 
 class ProgressPlotsWindow(tk.Toplevel):
     def __init__(self, top):
@@ -185,6 +199,7 @@ class TrainText(tk.Text):
         # Define text variables
         self.text = ''
         self.link = ''
+        self.lang = ''
         self.characters = 0
         self.word_counter = word_counter
         self.mistakes = 0
@@ -428,8 +443,6 @@ main.mainloop()
 print(time.strftime("%Y-%m-%d %H:%M", time.gmtime()))
 
 
-from tkinter import font
-for f in set(font.families()):
-    print(f)
-
-
+# from tkinter import font
+# for f in set(font.families()):
+#     print(f)
