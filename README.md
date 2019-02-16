@@ -32,7 +32,3 @@ cd Typing-Trainer/
 pip3 install -r requirements.txt
 python3 typing_trainer.py
 ```
-img[src*="#thumbnail"] {
-   width:150px;
-   height:100px;
-}
