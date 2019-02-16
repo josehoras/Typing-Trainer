@@ -37,19 +37,19 @@ class MyFrame(tk.Frame):
 class MyButton(tk.Button):
     def __init__(self, frame, location, txt, command):
         super().__init__(frame, text=txt, font=10, command=command)
-        self.pack(side=location, padx=10, pady=5)
+        self.pack(side=location, padx=8, pady=5)
 
 
 class WordLimit():
     # Create max words list
-    def __init__(self, parent):
+    def __init__(self, parent, default=300):
         w = tk.Label(parent, text="Max. words: ", font=10)
         w.pack(side=tk.LEFT, padx=5, pady=5)
-        var = tk.StringVar()
-        self.value = tk.Spinbox(parent, values=(100, 200, 300, 400, 500), textvariable=var,
+        self.var = tk.IntVar()
+        self.value = tk.Spinbox(parent, values=(100, 200, 300, 400, 500), textvariable=self.var,
                                 bg="white", width=5, justify=tk.CENTER, state='readonly')
         self.value.pack(side=tk.LEFT, padx=0, pady=5)
-        var.set(300)  # default value
+        self.var.set(default)  # default value
 
 
 class WordCounter():
@@ -72,10 +72,10 @@ class MyMainWindow(tk.Tk):
         top_frame = MyFrame(self, tk.TOP)
         center_frame = MyFrame(self, tk.TOP)
         # Set max words and word counter
-        max_words = WordLimit(top_frame)
+        self.max_words = WordLimit(top_frame)
         words = WordCounter(top_frame)
         # Define text box with scrollbar
-        txt_box = TrainText(center_frame, max_words.value, words.counter)
+        txt_box = TrainText(center_frame, self.max_words.value, words.counter)
         # Create buttons
         MyButton(bottom_frame, tk.RIGHT, 'Quit', self.quit)
         MyButton(bottom_frame, tk.LEFT, 'Progress', lambda: ProgressPlotsWindow(self))
@@ -91,29 +91,49 @@ class ProgressPlotsWindow(tk.Toplevel):
         self.fig = plt.figure(figsize=(6, 4), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.bottom_frame)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        self.max_words = WordLimit(self.top_frame)
-        wpm, acc, score, date = load_data()
-        self.b_score = MyButton(self.top_frame, tk.RIGHT, 'Score',
-                                lambda: self.plot("Score", date[self.get_set()], score[self.get_set()], 0, 10))
-        self.b_acc = MyButton(self.top_frame, tk.RIGHT, 'Accuracy',
-                              lambda: self.plot("Accuracy", date[self.get_set()], acc[self.get_set()], 80, 100))
-        self.b_wpm = MyButton(self.top_frame, tk.RIGHT, 'Words per minute',
-                              lambda: self.plot("Words per minute", date[self.get_set()], wpm[self.get_set()], 0, 60))
-        self.plot("Words per minute", date[self.get_set()], wpm[self.get_set()], 0, 60)
+        self.max_words = WordLimit(self.top_frame, top.max_words.value.get())
+        self.max_words.value.bind('<ButtonRelease-1>', lambda event: self.on_release(event))
+        self.plot_data = load_data()  # wpm, acc, score, date
+        self.plots = {0:'Words per minute', 1:'Accuracy', 2:'Score'}
+        self.ylims = {0:(0,50), 1: (90,100), 2:(0,10)}
+        self.current_plot = 0
+        self.b_score = MyButton(self.top_frame, tk.RIGHT, self.plots[2],
+                                lambda: self.plot(2, self.get_set()))
+        self.b_acc = MyButton(self.top_frame, tk.RIGHT, self.plots[1],
+                              lambda: self.plot(1, self.get_set()))
+        self.b_wpm = MyButton(self.top_frame, tk.RIGHT, self.plots[0],
+                              lambda: self.plot(0, self.get_set()))
+
+        self.plot(self.current_plot, self.get_set())
+
+    def on_release(self, e):
+        nset = self.get_set() + (2 * (e.y < 10) - 1) * 100
+        cset = sorted((100, nset, 500))[1]
+        self.plot(self.current_plot, cset)
 
     def get_set(self):
-        return int(self.max_words.value.get())
+        return self.max_words.var.get()
 
-    def plot(self, title, xdata, ydata, y_min, y_max):
+    def plot(self, plot_nr, plot_set):
+        self.current_plot = plot_nr
+        xdata = self.plot_data[3][plot_set]
+        ydata = self.plot_data[plot_nr][plot_set]
         dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in xdata]
         dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
         plt.cla()
-        plt.title(title)
+        plt.title(self.plots[plot_nr])
         plt.scatter(dates_f, ydata)
         plt.plot(dates_f, ydata)
         plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
         plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
-        plt.ylim(y_min, y_max)
+        plt.ylim(self.ylims[plot_nr])
+        # plt.locator_params(axis='x', numticks=10)
+        ticks = [x for x in range(0, len(dates_f), int(len(dates_f)/10)+1)]
+        if ticks[-1] != (len(dates_f) - 1): ticks[-1] = (len(dates_f)-1)
+        print(ticks, len(dates_f))
+        plt.xticks(ticks)
+        plt.grid(True, 'major', 'y', ls='--')
+        plt.grid(True, 'major', 'x', ls=':', lw=0.3)
         self.canvas.draw()
 
 
