@@ -58,7 +58,7 @@ class WordLimit():
         self.value = tk.Spinbox(parent, values=(100, 200, 300, 400, 500), textvariable=self.var,
                                 bg="white", width=5, justify=tk.CENTER, state='readonly', font=('TkTextFont', 11))
         parent.columnconfigure(1, weight=0)
-        self.value.grid(row=0, column=1)
+        self.value.grid(row=0, column=1,sticky=tk.W)
         self.var.set(default)  # default value
 
 
@@ -125,12 +125,18 @@ class ProgressPlotsWindow(tk.Toplevel):
         self.plots = {0:'Words per minute', 1:'Accuracy', 2:'Score'}
         self.ylims = {0:(0,50), 1: (90,100), 2:(0,10)}
         self.current_plot = 0
-        self.b_score = MyButton(self.top_frame, tk.RIGHT, self.plots[2],
-                                lambda: self.plot(2, self.get_set()))
-        self.b_acc = MyButton(self.top_frame, tk.RIGHT, self.plots[1],
-                              lambda: self.plot(1, self.get_set()))
-        self.b_wpm = MyButton(self.top_frame, tk.RIGHT, self.plots[0],
-                              lambda: self.plot(0, self.get_set()))
+
+        self.b_wpm = tk.Button(self.top_frame, text=self.plots[0], font=('TkTextFont', 12),
+                               command=lambda: self.plot(0, self.get_set()))
+        self.top_frame.columnconfigure(1, weight=1)
+        self.b_wpm.grid(row=0, column=2)
+        self.b_acc = tk.Button(self.top_frame, text=self.plots[1], font=('TkTextFont', 12),
+                              command=lambda: self.plot(1, self.get_set()))
+        self.b_acc.grid(row=0, column=3)
+        self.b_score = tk.Button(self.top_frame, text=self.plots[2], font=('TkTextFont', 12),
+                                command=lambda: self.plot(2, self.get_set()))
+        self.b_score.grid(row=0, column=4, sticky=tk.E)
+
 
         self.plot(self.current_plot, self.get_set())
 
