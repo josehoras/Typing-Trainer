@@ -26,7 +26,9 @@ SPECIAL_KEYS = {'degree': '°', 'asciicircum': '^', 'exclam': '!', 'quotedbl': '
                 'less': '<', 'comma': ',', 'period': '.', 'minus': '-', 'underscore': '_',
                 'udiaeresis': 'ü', 'Udiaeresis': 'Ü', 'odiaeresis': 'ö', 'Odiaeresis': 'Ö',
                 'adiaeresis': 'ä', 'Adiaeresis': 'Ä', 'asterisk': '*', 'numbersign': '#',
-                'apostrophe': "'", 'colon': ':', 'semicolon': ';', 'greater': '>', 'at': '@'}
+                'apostrophe': "'", 'colon': ':', 'semicolon': ';', 'greater': '>', 'at': '@',
+                'twosuperior':'²', 'threesuperior':'³', 'asciitilde':'~', 'mu':'µ', 'bar':'|',
+                'EuroSign':'€', 'backslash':'\\'}
 
 
 class MyFrame(tk.Frame):
@@ -248,6 +250,7 @@ class TrainText(tk.Text):
     @staticmethod
     def get_type_char(event):
         key = event.keysym
+        print(key)
         if key in LETTERS: return key
         if key in SPECIAL_KEYS: return SPECIAL_KEYS[key]
         if key == 'BackSpace': return -1
@@ -353,7 +356,7 @@ def format(txt):
     else:
         i = 0
     check_brackets = txt.split('.')[i]
-    if '(' and ')' in check_brackets:
+    if '('  in check_brackets and ')' in check_brackets:
         a = check_brackets.index('(')
         b = check_brackets.index(')')
         in_brackets = check_brackets[a - 1:b + 1]
@@ -378,18 +381,33 @@ def get_wiki_text(max_length):
         pagina = wikipedia.page(link)
         text = pagina.summary
         print(len(text.split()), " ", int(max_length), " ")
-        if max_length >= len(text.split()) > max_length / 2:
-            go = 1
+        if max_length >= len(text.split()) > max_length / 1.8:
+            text = format(text)
+            chars = set(text)
+            chars.discard('¶')
+            chars.discard('\n')
+            if all([char in LETTERS or char in list(SPECIAL_KEYS.values()) for char in chars]):
+                go = 1
+            else:
+                print(chars)
+                print([char in LETTERS or char in list(SPECIAL_KEYS.values()) for char in chars])
         else:
             for i in reversed(range(1, len(text.split("\n")))):
                 print(i)
                 shorter_text = ''.join(text.split("\n")[0:i])
                 print(len(shorter_text.split()))
-                if max_length >= len(shorter_text.split()) > max_length / 2:
-                    text = shorter_text
-                    go = 1
+                if max_length >= len(shorter_text.split()) > max_length / 1.8:
+                    text = format(shorter_text)
+                    chars = set(text)
+                    chars.discard('¶')
+                    chars.discard('\n')
+                    if all([char in LETTERS or char in list(SPECIAL_KEYS.values()) for char in chars]):
+                        go = 1
+                    else:
+                        print(chars)
+                        print([char in LETTERS or char in list(SPECIAL_KEYS.values()) for char in chars])
                     break
-    return format(text), 'https://en.wikipedia.org/wiki/' + link
+    return text, 'https://en.wikipedia.org/wiki/' + link
 
 
 main = MyMainWindow()
