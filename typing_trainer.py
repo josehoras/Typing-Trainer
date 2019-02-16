@@ -241,7 +241,8 @@ class TrainText(tk.Text):
             minutes = int(self.finish_time / 60)
             sec = self.finish_time % 60
             cps = self.characters / self.finish_time
-            wpm = 60 * int(self.word_counter.get()) / self.finish_time
+            # wpm = 60 * int(self.word_counter.get()) / self.finish_time
+            wpm = cps * 60 / 5
             acc = 100 * (1 - self.mistakes / self.characters)
             score = 2 * cps * acc/100
             summary = ["Congratulations!\n"]
