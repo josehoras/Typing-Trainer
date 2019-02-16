@@ -122,6 +122,7 @@ class ProgressPlotsWindow(tk.Toplevel):
         self.max_words = WordLimit(self.top_frame, top.max_words.value.get())
         self.max_words.value.bind('<ButtonRelease-1>', lambda event: self.on_release(event))
         self.plot_data = load_data()  # wpm, acc, score, date
+        print(self.plot_data)
         self.plots = {0:'Words per minute', 1:'Accuracy', 2:'Score'}
         self.ylims = {0:(0,50), 1: (90,100), 2:(0,10)}
         self.current_plot = 0
@@ -152,6 +153,7 @@ class ProgressPlotsWindow(tk.Toplevel):
         self.current_plot = plot_nr
         xdata = self.plot_data[3][plot_set]
         ydata = self.plot_data[plot_nr][plot_set]
+        print(xdata)
         dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in xdata]
         dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
         plt.cla()
@@ -161,8 +163,9 @@ class ProgressPlotsWindow(tk.Toplevel):
         plt.gcf().subplots_adjust(bottom=0.25, left=0.2)
         plt.setp(plt.gca().get_xticklabels(), rotation=30, horizontalalignment='right')
         plt.ylim(self.ylims[plot_nr])
-        ticks = [x for x in range(0, len(dates_f), int(len(dates_f)/10)+1)]
-        if ticks[-1] != (len(dates_f) - 1): ticks[-1] = (len(dates_f)-1)
+        ticks = [x for x in range(0, len(dates_f), int(len(dates_f) / 10) + 1)]
+        if len(dates_f) > 0:
+            if ticks[-1] != (len(dates_f) - 1): ticks[-1] = (len(dates_f)-1)
         plt.xticks(ticks)
         plt.grid(True, 'major', 'y', ls='--')
         plt.grid(True, 'major', 'x', ls=':', lw=0.3)
@@ -283,7 +286,7 @@ class TrainText(tk.Text):
     @staticmethod
     def get_type_char(event):
         key = event.keysym
-        print(key)
+        # print(key)
         if key in LETTERS: return key
         if key in SPECIAL_KEYS: return SPECIAL_KEYS[key]
         if key == 'BackSpace': return -1
@@ -359,13 +362,17 @@ class TrainText(tk.Text):
         else: return False
 
     def save_progress(self, wpm, acc, score):
+        print(wpm)
         wpm_series, acc_series, score_series, date_series = load_data()
         max_length = int(self.max_words.get())
         date = time.strftime("%Y-%m-%d %H:%M", time.gmtime())
+        print(wpm_series)
         wpm_series[max_length].append(wpm)
+        print(wpm_series)
         acc_series[max_length].append(acc)
         score_series[max_length].append(score)
         date_series[max_length].append(date)
+        print(wpm_series)
         pickle.dump([wpm_series, acc_series, score_series, date_series], open(PROGRESS_FILE, 'wb'))
 
 
@@ -375,7 +382,10 @@ def load_data():
             pickle.load(open(PROGRESS_FILE, 'rb'), encoding='latin1')
     except (OSError, IOError):  # No progress file yet available
         empty = {100:[], 200:[], 300:[], 400:[], 500:[]}
-        wpm_series, acc_series, score_series, date_series = [empty] * 4
+        wpm_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+        acc_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+        score_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
+        date_series = {100:[], 200:[], 300:[], 400:[], 500:[]}
     return wpm_series, acc_series, score_series, date_series
 
 
