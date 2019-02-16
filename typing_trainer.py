@@ -394,6 +394,18 @@ def format(txt):
         in_brackets = check_brackets[a - 1:b + 1]
         no_brackets = check_brackets.replace(in_brackets, '')
         txt = txt.replace(check_brackets, no_brackets)
+    # Now remove text between [] in all text
+    c = True
+    while c:
+        if '[' in txt and ']' in txt:
+            a = txt.index('[')
+            b = txt.index(']')
+            in_brackets = txt[a - 1:b + 1]
+            txt = txt.replace(in_brackets, '')
+            print("brackets removed")
+        else:
+            c = False
+
     ntext = txt
     h = 0
     for i in range(len(txt)):
@@ -406,8 +418,8 @@ def format(txt):
             print('ene')
             ntext = ntext[:i + h] + "n" + ntext[i + h + 1:]
         if txt[i] == '\u200b':
-            ntext = ntext[:i + h] + ntext[i + h + 1:]
-            h -= 1
+            ntext = ntext[:i + h] + " " + ntext[i + h + 1:]
+            h += 0
     return ntext
 
 
