@@ -82,7 +82,7 @@ class WikiLang():
         self.var = tk.StringVar()
         self.value = tk.Spinbox(parent, values=("English", "Español", "Deutsch"), textvariable=self.var,
                                 background="cyan", width=10, justify=tk.CENTER, state='readonly', font=('TkTextFont', 12))
-        print(self.value.cget('font'))
+        # print(self.value.cget('font'))
         parent.columnconfigure(3, weight=1)
         self.value.grid(row=0, column=3, sticky=tk.W)
         self.var.set(default)  # default value
@@ -122,7 +122,6 @@ class ProgressPlotsWindow(tk.Toplevel):
         self.max_words = WordLimit(self.top_frame, top.max_words.value.get())
         self.max_words.value.bind('<ButtonRelease-1>', lambda event: self.on_release(event))
         self.plot_data = load_data()  # wpm, acc, score, date
-        print(self.plot_data)
         self.plots = {0:'Words per minute', 1:'Accuracy', 2:'Score'}
         self.ylims = {0:(0,50), 1: (90,100), 2:(0,10)}
         self.current_plot = 0
@@ -153,7 +152,6 @@ class ProgressPlotsWindow(tk.Toplevel):
         self.current_plot = plot_nr
         xdata = self.plot_data[3][plot_set]
         ydata = self.plot_data[plot_nr][plot_set]
-        print(xdata)
         dates = [datetime.datetime.strptime(d, '%Y-%m-%d %H:%M') for d in xdata]
         dates_f = [d.strftime('%d %b %y, %H:%M') for d in dates]
         plt.cla()
@@ -205,7 +203,6 @@ class TrainText(tk.Text):
         self.link = ''
         self.lang_codes ={'English':'en', "Español":'es', "Deutsch":'de'}
         self.lang = language
-        print(self.lang)
         self.characters = 0
         self.word_counter = word_counter
         self.mistakes = 0
@@ -269,7 +266,6 @@ class TrainText(tk.Text):
 
     def _click(self, event):
         webbrowser.open_new(self.link)
-        print("click")
 
 
     def change_status(self):
@@ -362,17 +358,13 @@ class TrainText(tk.Text):
         else: return False
 
     def save_progress(self, wpm, acc, score):
-        print(wpm)
         wpm_series, acc_series, score_series, date_series = load_data()
         max_length = int(self.max_words.get())
         date = time.strftime("%Y-%m-%d %H:%M", time.gmtime())
-        print(wpm_series)
         wpm_series[max_length].append(wpm)
-        print(wpm_series)
         acc_series[max_length].append(acc)
         score_series[max_length].append(score)
         date_series[max_length].append(date)
-        print(wpm_series)
         pickle.dump([wpm_series, acc_series, score_series, date_series], open(PROGRESS_FILE, 'wb'))
 
 
@@ -413,7 +405,6 @@ def format(txt):
             b = txt.index(']')
             in_brackets = txt[a - 1:b + 1]
             txt = txt.replace(in_brackets, '')
-            print("brackets removed")
         else:
             c = False
 
@@ -426,7 +417,6 @@ def format(txt):
         if txt[i] == "–" or txt[i] == "—":
             ntext = ntext[:i + h] + "-" + ntext[i + h + 1:]
         if txt[i] == 'ñ':
-            print('ene')
             ntext = ntext[:i + h] + "n" + ntext[i + h + 1:]
         if txt[i] == '\u200b':
             ntext = ntext[:i + h] + " " + ntext[i + h + 1:]
@@ -435,7 +425,6 @@ def format(txt):
 
 
 def get_wiki_text(max_length, lang):
-    print(lang)
     wikipedia.set_lang(lang)
     wiki = {'en':"Wikipedia:Featured articles", 'es':'Wikipedia:Artículos destacados', 'de':'Wikipedia:Exzellente Artikel'}
     wiki_list = wikipedia.page(wiki[lang]).links
@@ -453,13 +442,12 @@ def get_wiki_text(max_length, lang):
             if all([char in LETTERS or char in list(SPECIAL_KEYS.values()) for char in chars]):
                 go = 1
             else:
-                print(chars)
-                print([char for char in chars if not (char in LETTERS or char in list(SPECIAL_KEYS.values()))])
+                pass
+                # print(chars)
+                # print([char for char in chars if not (char in LETTERS or char in list(SPECIAL_KEYS.values()))])
         else:
             for i in reversed(range(1, len(text.split("\n")))):
-                print(i)
                 shorter_text = ''.join(text.split("\n")[0:i])
-                print(len(shorter_text.split()))
                 if max_length >= len(shorter_text.split()) > max_length / 1.8:
                     text = format(shorter_text)
                     chars = set(text)
@@ -468,16 +456,15 @@ def get_wiki_text(max_length, lang):
                     if all([char in LETTERS or char in list(SPECIAL_KEYS.values()) for char in chars]):
                         go = 1
                     else:
-                        print(chars)
-                        print([char for char in chars if not (char in LETTERS or char in list(SPECIAL_KEYS.values()))])
+                        pass
+                        # print(chars)
+                        # print([char for char in chars if not (char in LETTERS or char in list(SPECIAL_KEYS.values()))])
                     break
     return text, 'https://' + lang + '.wikipedia.org/wiki/' + link
 
 
 main = MyMainWindow()
 main.mainloop()
-print(time.strftime("%Y-%m-%d %H:%M", time.gmtime()))
-
 
 # from tkinter import font
 # for f in set(font.families()):
