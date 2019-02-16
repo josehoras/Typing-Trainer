@@ -14,8 +14,15 @@ Again, credits to Klavaro, as this is basically a slimmed down clon for my learn
 - You can choose from three languages for the exercise.
 - You can always reload a new text if you don't like the current one.
 
-![caption](https://github.com/josehoras/Typing-Trainer/blob/master/typing_trainer.png)
-
+<img src="https://github.com/josehoras/Typing-Trainer/blob/master/loading.png" alt="Loading"
+	title="Loading screen" width="425" height="300" />
+<img src="https://github.com/josehoras/Typing-Trainer/blob/master/training.png" alt="Training"
+	title="Training screen" width="425" height="300" />
+<img src="https://github.com/josehoras/Typing-Trainer/blob/master/summary.png" alt="Summary"
+	title="Summary screen" width="425" height="300" />
+<img src="https://github.com/josehoras/Typing-Trainer/blob/master/progress.png" alt="Progress"
+	title="Progress screen" width="425" height="300" />
+  
 ## Install
 
 Simple GitHub cloning and Python running. The required libraries are _matplotlib_, _wikipedia_, and _six_ 
@@ -25,3 +32,7 @@ cd Typing-Trainer/
 pip3 install -r requirements.txt
 python3 typing_trainer.py
 ```
+img[src*="#thumbnail"] {
+   width:150px;
+   height:100px;
+}
