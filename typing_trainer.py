@@ -7,6 +7,7 @@ import datetime
 import wikipedia
 import random
 import time
+import webbrowser
 
 matplotlib.use('TkAgg')
 
@@ -152,10 +153,14 @@ class TrainText(tk.Text):
         self.tag_config("bad", background="misty rose", foreground="red")
         self.tag_config("corrected", background="gainsboro", foreground="gold4")
         self.tag_config("cursor", background="yellow", foreground="black")
+        self.tag_config("hyper", foreground="blue", underline=1)
         self.bad = set()
         self.corrected = set()
-        # Define binding
+        # Define bindings
         self.bind_all('<Key>', self.type)
+        self.tag_bind("hyper", "<Enter>", self._enter)
+        self.tag_bind("hyper", "<Leave>", self._leave)
+        self.tag_bind("hyper", "<Button-1>", self._click)
         # Define screen variables
         self.screens = ['Welcome', 'Loading', 'Training', 'Summary']
         self.screen_ix = 0
@@ -163,6 +168,7 @@ class TrainText(tk.Text):
         self.finish_time = 0
         # Define text variables
         self.text = ''
+        self.link = ''
         self.characters = 0
         self.word_counter = word_counter
         self.mistakes = 0
@@ -175,17 +181,18 @@ class TrainText(tk.Text):
         self.delete("0.0", tk.END)
         screen = self.screens[self.screen_ix]
         if screen == "Welcome":
-            self.insert(tk.END, "Welcome!\n\nPress any key to load the next text.")
+            self.insert(tk.END, "Welcome!\n\nPress any key to load the next text.\n")
         elif screen == "Loading":
             self.characters = 0
             self.word_counter.set(0)
             self.mistakes = 0
             self.insert(tk.END, "Loading Wikipedia page...")
             self.update()
-            self.text = get_wiki_text(int(self.max_words.get()))
+            self.text, self.link = get_wiki_text(int(self.max_words.get()))
             self.characters = len(self.text)
             self.word_counter.set(len(self.text.split()))
-            self.insert(tk.END, "\n\nPress any key to start the exercise.")
+            self.insert(tk.END, "\n\nPress any key to start the exercise.\n\n")
+            # self.insert(tk.END, self.link.split('/')[-1], "hyper")
         elif screen == "Training":
             self.insert(tk.END, self.text)
             self.insert(tk.END, '\u00B6\n')
@@ -209,11 +216,23 @@ class TrainText(tk.Text):
             summary.append("Words per minute: %.1f\n" % wpm)
             summary.append("Accuracy: %.1f%%\n" % acc)
             summary.append("Score: %.2f\n" % score)
-            summary.append("\nPress any key to continue training.")
+            summary.append("\nPress any key to continue training.\n\n")
             self.save_progress(wpm, acc, score)
             for line in summary:
                 self.insert(tk.END, line)
+            self.insert(tk.END, self.link.split('/')[-1], "hyper")
         self.config(state=tk.DISABLED)
+
+    def _enter(self, event):
+        self.config(cursor="hand2")
+
+    def _leave(self, event):
+        self.config(cursor="")
+
+    def _click(self, event):
+        webbrowser.open_new(self.link)
+        print("click")
+
 
     def change_status(self):
         if self.screen_ix < 3:
@@ -355,7 +374,8 @@ def get_wiki_text(max_length):
     wiki_list = wikipedia.page("Wikipedia:Featured articles").links
     go = 0
     while go == 0:
-        pagina = wikipedia.page(random.choice(wiki_list))
+        link = random.choice(wiki_list)
+        pagina = wikipedia.page(link)
         text = pagina.summary
         print(len(text.split()), " ", int(max_length), " ")
         if max_length >= len(text.split()) > max_length / 2:
@@ -369,7 +389,7 @@ def get_wiki_text(max_length):
                     text = shorter_text
                     go = 1
                     break
-    return format(text)
+    return format(text), 'https://en.wikipedia.org/wiki/' + link
 
 
 main = MyMainWindow()
