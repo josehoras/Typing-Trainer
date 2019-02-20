@@ -244,7 +244,7 @@ class TrainText(tk.Text):
             # wpm = 60 * int(self.word_counter.get()) / self.finish_time
             wpm = cps * 60 / 5
             acc = 100 * (1 - self.mistakes / self.characters)
-            score = 2 * cps * acc/100
+            score = (wpm / 10) + (acc - 97.5) * 2
             summary = ["Congratulations!\n"]
             summary.append("You did it in %i minutes and %i seconds\n" % (minutes, sec))
             summary.append("Characters per second: %.1f\n" % cps)
@@ -434,7 +434,7 @@ def get_wiki_text(max_length, lang):
         pagina = wikipedia.page(link)
         text = pagina.summary
         # print(len(text.split()), " ", int(max_length), " ")
-        if max_length >= len(text.split()) > max_length / 1.8:
+        if max_length >= len(text.split()) > max_length / 1.5:
             text = format(text)
             chars = set(text)
             chars.discard('¶')
@@ -448,7 +448,7 @@ def get_wiki_text(max_length, lang):
         else:
             for i in reversed(range(1, len(text.split("\n")))):
                 shorter_text = ''.join(text.split("\n")[0:i])
-                if max_length >= len(shorter_text.split()) > max_length / 1.8:
+                if max_length >= len(shorter_text.split()) > max_length / 1.5:
                     text = format(shorter_text)
                     chars = set(text)
                     chars.discard('¶')
