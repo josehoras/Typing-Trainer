@@ -92,6 +92,8 @@ class MyMainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Typing Trainer")
+        self.minsize(600, 300)
+        self.protocol("WM_DELETE_WINDOW", self.quit)
         # Create frames in window
         bottom_frame = MyFrame(self, tk.BOTTOM)
         top_frame = MyFrame(self, tk.TOP)
@@ -313,7 +315,7 @@ class TrainText(tk.Text):
     def check_and_scroll(self):
         cursor_y = self.dlineinfo('cursor_mark')[1]
         window_height = self.winfo_height()
-        if cursor_y + 50 > window_height:
+        if cursor_y + 80 > window_height:
             self.yview_scroll(window_height/2, 'pixels')
 
     def update_marks(self, forward=True, move_good=True):
@@ -382,6 +384,7 @@ def load_data():
 
 
 def format(txt):
+    print(txt)
     f_sent_l_word = txt.split('.')[0].split()[-1]
     # print(f_sent_l_word)
     # Remove brakets in first sentence, that often includes non keyboard characters
@@ -412,6 +415,7 @@ def format(txt):
     h = 0
     for i in range(len(txt)):
         if txt[i] == "\n":
+            print("Enter")
             ntext = ntext[:i + h] + "\u00B6" + ntext[i + h:]
             h += 1
         if txt[i] == "–" or txt[i] == "—":
@@ -419,6 +423,7 @@ def format(txt):
         if txt[i] == 'ñ':
             ntext = ntext[:i + h] + "n" + ntext[i + h + 1:]
         if txt[i] == '\u200b':
+            print("ub")
             ntext = ntext[:i + h] + " " + ntext[i + h + 1:]
             h += 0
     return ntext
